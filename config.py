@@ -1,4 +1,9 @@
-"""Application configuration settings."""
+"""
+Application configuration settings.
+
+This module defines configuration classes for different environments.
+Windows Authentication is used for SQL Server connections.
+"""
 
 import os
 from dotenv import load_dotenv
@@ -11,19 +16,20 @@ class Config:
     """Base configuration class."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY") or "your-secret-key-here"
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URI")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Database connection parameters
+    # Database configuration for Windows Authentication
     DB_DRIVER = os.environ.get("DB_DRIVER", "ODBC Driver 18 for SQL Server")
-    DB_SERVER = os.environ.get("DB_SERVER", "localhost")
-    DB_NAME = os.environ.get("DB_NAME", "master")
-    DB_USERNAME = os.environ.get("DB_USERNAME", "sa")
-    DB_PASSWORD = os.environ.get("DB_PASSWORD", "YourStrong!Passw0rd")
+    DB_SERVER = os.environ.get("DB_SERVER", "toc-nwsdb-01")
+    DB_NAME = os.environ.get("DB_NAME", "LogosDB")
+
+    # No username/password needed for Windows Authentication
 
     # Cache configuration
     CACHE_TYPE = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
+
+    # Logging
+    LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
 
 class DevelopmentConfig(Config):
@@ -38,6 +44,7 @@ class TestingConfig(Config):
 
     DEBUG = True
     TESTING = True
+    DB_NAME = os.environ.get("TEST_DB_NAME", "test_db")
 
 
 class ProductionConfig(Config):

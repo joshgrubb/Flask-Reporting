@@ -1,40 +1,55 @@
-"""Flask application factory."""
+"""
+Application factory module.
+
+This module contains the application factory function for creating Flask app instances.
+"""
 
 import os
+import logging
 from flask import Flask
-from flask_cors import CORS
-from flask_caching import Cache
+from config import config
 
-# Initialize extensions
-cache = Cache()
+# Import database functions
+from app.core.database import close_db_connection
 
 
 def create_app(config_name=None):
-    """Create and configure the Flask application."""
+    """
+    Create and configure the Flask application.
+
+    Args:
+        config_name (str, optional): The configuration to use.
+            Defaults to the APP_ENV environment variable or 'default'.
+
+    Returns:
+        Flask: The configured Flask application.
+    """
     # Create Flask app
     app = Flask(__name__)
 
-    # Load configuration
-    from config import config
+    # Determine configuration to use
+    if config_name is None:
+        config_name = os.environ.get("APP_ENV", "default")
 
-    config_name = config_name or os.environ.get("FLASK_ENV", "default")
+    # Load configuration
     app.config.from_object(config[config_name])
 
-    # Initialize extensions
-    CORS(app)
-    cache.init_app(app)
+    # Configure logging
+    logging.basicConfig(
+        level=getattr(logging, app.config["LOG_LEVEL"]),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
-    # Register blueprints
-    from app.core.routes import main
+    # Register database connection teardown
+    app.teardown_appcontext(close_db_connection)
 
-    app.register_blueprint(main)
+    # Register blueprints here (will be added later)
+    # from app.reports.powerbi import bp as powerbi_bp
+    # app.register_blueprint(powerbi_bp)
 
-    # Import and register report blueprints
-    # This will be expanded as you add reports
-    from app.reports.powerbi.routes import powerbi
-    from app.reports.ssrs.routes import ssrs
-
-    app.register_blueprint(powerbi)
-    app.register_blueprint(ssrs)
+    @app.route("/")
+    def index():
+        """Basic route for testing."""
+        return "Flask Reporting Application"
 
     return app

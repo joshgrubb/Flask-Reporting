@@ -1,11 +1,29 @@
+# Flask and extensions
 Flask==3.1.0
 Flask-WTF==1.2.2
-Flask-SQLAlchemy==3.1.1
 Flask-Cors==4.0.0
 Flask-Login==0.6.2
-# Flask-Caching==2.0.2
+Flask-Caching==2.3.1
+
+# Database
 pyodbc==5.2.0
 SQLAlchemy==2.0.39
 pandas==2.2.3
+
+# Configuration and environment
 python-dotenv==1.0.0
-# pylint==2.17.5
+
+# Kerberos support for Windows Authentication
+pywin32==306; sys_platform == 'win32'
+winkerberos==0.9.1; sys_platform == 'win32'
+
+# Logging and monitoring
+structlog==23.1.0
+
+# Web server
+gunicorn==21.2.0; sys_platform != 'win32'
+
+# Development tools
+black==23.7.0
+pylint==2.17.5
+mypy==1.5.1
