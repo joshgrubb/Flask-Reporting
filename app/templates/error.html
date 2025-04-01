@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2 text-center">
+        <div class="mt-5">
+            <h1 class="text-danger"><i class="fas fa-exclamation-triangle"></i> Error</h1>
+            <p class="lead">An unexpected error has occurred.</p>
+
+            {% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <a href="/" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home"></i> Return to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

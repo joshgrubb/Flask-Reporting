@@ -25,7 +25,7 @@ def create_app(config_name=None):
         Flask: The configured Flask application.
     """
     # Create Flask app
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="templates", static_folder="static")
 
     # Determine configuration to use
     if config_name is None:
@@ -43,13 +43,16 @@ def create_app(config_name=None):
     # Register database connection teardown
     app.teardown_appcontext(close_db_connection)
 
-    # Register blueprints here (will be added later)
-    # from app.reports.powerbi import bp as powerbi_bp
-    # app.register_blueprint(powerbi_bp)
+    # Register blueprints
+    from app.reports import bp as reports_bp
+
+    app.register_blueprint(reports_bp)
 
     @app.route("/")
     def index():
-        """Basic route for testing."""
-        return "Flask Reporting Application"
+        """Main application route redirects to reports dashboard."""
+        from flask import redirect, url_for
+
+        return redirect(url_for("reports.index"))
 
     return app
