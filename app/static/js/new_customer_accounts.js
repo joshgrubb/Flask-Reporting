@@ -5,16 +5,14 @@
  * including loading data, initializing charts, and handling user interactions.
  */
 
-// Global variables
-let accountTypeChart, dailyAccountsChart;
-let dataTable;
-
 // Document ready function
 $(document).ready(function () {
     // Initialize date picker
-    flatpickr("#moveInDate", {
-        dateFormat: "Y-m-d"
-    });
+    if ($("#moveInDate").length > 0 && typeof flatpickr === 'function') {
+        flatpickr("#moveInDate", {
+            dateFormat: "Y-m-d"
+        });
+    }
 
     // Initial data load
     loadAllData();
@@ -109,11 +107,20 @@ function loadAllData() {
  * @param {Array} data - The account data to display
  */
 function initDataTable(data) {
-    if (dataTable) {
-        dataTable.destroy();
+    // Check if DataTables is available
+    if (typeof $.fn.DataTable !== 'function') {
+        console.error('DataTables is not loaded properly');
+        showError('DataTables library failed to load. Please check console for details.');
+        return;
     }
 
-    dataTable = $('#accountsTable').DataTable({
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#accountsTable')) {
+        $('#accountsTable').DataTable().destroy();
+    }
+
+    // Create options object for DataTable
+    const dataTableOptions = {
         data: data,
         columns: [
             { data: 'FullAccountNumber' },
@@ -136,12 +143,26 @@ function initDataTable(data) {
             }
         ],
         pageLength: 10,
-        responsive: true,
         order: [[6, 'desc']], // Sort by Move-In Date, newest first
         dom: 'Bfrtip',
-        buttons: [
-            'copy', 'csv', 'excel', 'pdf', 'print'
-        ]
+        buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
+        language: {
+            search: "Search:",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "Showing 0 to 0 of 0 entries",
+            infoFiltered: "(filtered from _MAX_ total entries)"
+        }
+    };
+
+    // Initialize DataTable
+    const table = $('#accountsTable').DataTable(dataTableOptions);
+
+    // SafeDOM usage for window resize listener
+    $(window).on('resize', function () {
+        if (table && typeof table.columns === 'function') {
+            table.columns.adjust();
+        }
     });
 }
 
@@ -150,47 +171,73 @@ function initDataTable(data) {
  * @param {Array} data - The account type data to display
  */
 function initAccountTypeChart(data) {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded properly');
+        showError('Chart.js library failed to load. Please check console for details.');
+        return;
+    }
+
+    // Get canvas element
+    const canvas = document.getElementById('accountTypeChart');
+    if (!canvas) {
+        console.error('Cannot find accountTypeChart canvas element');
+        return;
+    }
+
+    // Safely destroy existing chart if it exists
+    // Check both the window object and the canvas object
+    if (window.accountTypeChart) {
+        if (typeof window.accountTypeChart.destroy === 'function') {
+            window.accountTypeChart.destroy();
+        } else {
+            // If the chart object exists but doesn't have a destroy method,
+            // it might be corrupted, so we'll clear it.
+            window.accountTypeChart = null;
+        }
+    }
+
+    // Check if there's a Chart instance attached to the canvas
+    const chartInstance = Chart.getChart(canvas);
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    // Prepare data for the chart
+    const labels = data.map(item => item['Account Type'] || 'Unknown');
+    const values = data.map(item => item.AccountCount);
+
+    // Create chart colors
+    const colors = [
+        'rgba(54, 162, 235, 0.7)',
+        'rgba(255, 99, 132, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(75, 192, 192, 0.7)',
+        'rgba(153, 102, 255, 0.7)',
+        'rgba(255, 159, 64, 0.7)',
+        'rgba(201, 203, 207, 0.7)'
+    ];
+
+    const borderColors = [
+        'rgba(54, 162, 235, 1)',
+        'rgba(255, 99, 132, 1)',
+        'rgba(255, 206, 86, 1)',
+        'rgba(75, 192, 192, 1)',
+        'rgba(153, 102, 255, 1)',
+        'rgba(255, 159, 64, 1)',
+        'rgba(201, 203, 207, 1)'
+    ];
+
+    // Create new chart
     try {
-        // Get the canvas element
-        const canvas = document.getElementById('accountTypeChart');
-
-        // Check if Chart.js is properly loaded
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js is not loaded properly');
-            showError('Chart.js library failed to load. Please reload the page or check console for details.');
-            return;
-        }
-
-        // Clear any existing chart
-        if (accountTypeChart) {
-            accountTypeChart.destroy();
-        }
-
-        // Create new chart
-        accountTypeChart = new Chart(canvas, {
+        window.accountTypeChart = new Chart(canvas, {
             type: 'pie',
             data: {
-                labels: data.map(item => item['Account Type'] || 'Unknown'),
+                labels: labels,
                 datasets: [{
-                    data: data.map(item => item.AccountCount),
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(201, 203, 207, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(201, 203, 207, 1)'
-                    ],
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: borderColors,
                     borderWidth: 1
                 }]
             },
@@ -219,19 +266,23 @@ function initAccountTypeChart(data) {
                 }
             }
         });
-
-        // Update summary statistics
-        if (data.length > 0) {
-            // Find primary account type (most common)
-            const primaryType = data[0]['Account Type'] || 'Unknown';
-            const primaryCount = data[0].AccountCount;
-
-            $('#primaryAccountType').text(primaryType);
-            $('#primaryAccountTypeCount').text(`${primaryCount} accounts`);
-        }
     } catch (error) {
-        console.error('Error initializing account type chart:', error);
-        showError('Failed to initialize account type chart: ' + error.message);
+        console.error('Error creating chart:', error);
+        showError('Failed to create chart: ' + error.message);
+        return;
+    }
+
+    // Update summary statistics
+    if (data.length > 0) {
+        // Find primary account type (most common)
+        data.sort((a, b) => b.AccountCount - a.AccountCount);
+        const primaryType = data[0]['Account Type'] || 'Unknown';
+        const primaryCount = data[0].AccountCount;
+        const total = values.reduce((sum, val) => sum + val, 0);
+        const percentage = Math.round((primaryCount / total) * 100);
+
+        $('#primaryAccountType').text(primaryType);
+        $('#primaryAccountTypeCount').text(`${primaryCount} accounts (${percentage}%)`);
     }
 }
 
@@ -240,30 +291,47 @@ function initAccountTypeChart(data) {
  * @param {Array} data - The daily accounts data to display
  */
 function initDailyAccountsChart(data) {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded properly');
+        showError('Chart.js library failed to load. Please check console for details.');
+        return;
+    }
+
+    // Get canvas element
+    const canvas = document.getElementById('dailyAccountsChart');
+    if (!canvas) {
+        console.error('Cannot find dailyAccountsChart canvas element');
+        return;
+    }
+
+    // Safely destroy existing chart if it exists
+    if (window.dailyAccountsChart) {
+        if (typeof window.dailyAccountsChart.destroy === 'function') {
+            window.dailyAccountsChart.destroy();
+        } else {
+            // If the chart object exists but doesn't have a destroy method,
+            // it might be corrupted, so we'll clear it.
+            window.dailyAccountsChart = null;
+        }
+    }
+
+    // Check if there's a Chart instance attached to the canvas
+    const chartInstance = Chart.getChart(canvas);
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    // Format dates for display
+    const formattedData = data.map(item => ({
+        date: formatDate(item.MoveInDate),
+        count: item.NewAccountCount,
+        rawDate: new Date(item.MoveInDate)
+    })).sort((a, b) => a.rawDate - b.rawDate);
+
+    // Create new chart
     try {
-        // Get the canvas element
-        const canvas = document.getElementById('dailyAccountsChart');
-
-        // Check if Chart.js is properly loaded
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js is not loaded properly');
-            showError('Chart.js library failed to load. Please reload the page or check console for details.');
-            return;
-        }
-
-        // Clear any existing chart
-        if (dailyAccountsChart) {
-            dailyAccountsChart.destroy();
-        }
-
-        // Format dates for display
-        const formattedData = data.map(item => ({
-            date: formatDate(item.MoveInDate),
-            count: item.NewAccountCount
-        }));
-
-        // Create new chart
-        dailyAccountsChart = new Chart(canvas, {
+        window.dailyAccountsChart = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: formattedData.map(item => item.date),
@@ -282,6 +350,16 @@ function initDailyAccountsChart(data) {
                     title: {
                         display: true,
                         text: 'Daily New Accounts'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function (tooltipItems) {
+                                return tooltipItems[0].label;
+                            },
+                            label: function (context) {
+                                return `New Accounts: ${context.raw}`;
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -304,25 +382,26 @@ function initDailyAccountsChart(data) {
                 }
             }
         });
-
-        // Calculate and update statistics
-        if (data.length > 0) {
-            // Total accounts
-            const totalAccounts = data.reduce((sum, item) => sum + item.NewAccountCount, 0);
-            $('#totalAccounts').text(totalAccounts);
-
-            // Daily average
-            const dailyAverage = (totalAccounts / data.length).toFixed(1);
-            $('#dailyAverage').text(dailyAverage);
-
-            // Date range info
-            const startDate = formatDate(data[0].MoveInDate);
-            const endDate = formatDate(data[data.length - 1].MoveInDate);
-            $('#dateRangeInfo').text(`From ${startDate} to ${endDate}`);
-        }
     } catch (error) {
-        console.error('Error initializing daily accounts chart:', error);
-        showError('Failed to initialize daily accounts chart: ' + error.message);
+        console.error('Error creating chart:', error);
+        showError('Failed to create chart: ' + error.message);
+        return;
+    }
+
+    // Calculate and update statistics
+    if (formattedData.length > 0) {
+        // Total accounts
+        const totalAccounts = formattedData.reduce((sum, item) => sum + item.count, 0);
+        $('#totalAccounts').text(totalAccounts);
+
+        // Daily average
+        const dailyAverage = (totalAccounts / formattedData.length).toFixed(1);
+        $('#dailyAverage').text(dailyAverage);
+
+        // Date range info
+        const startDate = formattedData[0].date;
+        const endDate = formattedData[formattedData.length - 1].date;
+        $('#dateRangeInfo').text(`From ${startDate} to ${endDate}`);
     }
 }
 
@@ -333,8 +412,20 @@ function initDailyAccountsChart(data) {
  */
 function formatDate(dateString) {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+
+    try {
+        const date = new Date(dateString);
+
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+
+        return date.toLocaleDateString();
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return '';
+    }
 }
 
 /**
@@ -344,8 +435,10 @@ function exportReportData() {
     const moveInDate = $('#moveInDate').val();
 
     // Build export URL
-    let url = '/reports/ssrs/new_customer_accounts/export?';
-    if (moveInDate) url += `move_in_date=${moveInDate}`;
+    let url = '/reports/ssrs/new_customer_accounts/export';
+    if (moveInDate) {
+        url += `?move_in_date=${moveInDate}`;
+    }
 
     // Open in new tab/window
     window.open(url, '_blank');
@@ -357,5 +450,35 @@ function exportReportData() {
  */
 function showError(message) {
     console.error(message);
-    alert(message);
+
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+    alertDiv.setAttribute('role', 'alert');
+
+    // Add alert content
+    alertDiv.innerHTML = `
+        <strong>Error:</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Find a place to add the alert
+    const container = document.querySelector('.container');
+    if (container) {
+        // Add to beginning of container
+        container.insertBefore(alertDiv, container.firstChild);
+    } else {
+        // If no container found, add to body
+        document.body.insertBefore(alertDiv, document.body.firstChild);
+    }
+
+    // Auto-close after 5 seconds
+    setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
+            }
+        }, 150);
+    }, 5000);
 }
