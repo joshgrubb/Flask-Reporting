@@ -35,7 +35,8 @@ def format_date_for_query(date_obj):
     Returns:
         str: Formatted date string for SQL Server.
     """
-    return date_obj.strftime("%Y-%m-%d %H:%M:%S")
+    # Format as date only to ensure consistent comparison in SQL
+    return date_obj.strftime("%Y-%m-%d")
 
 
 def get_new_customer_accounts(move_in_date=None):

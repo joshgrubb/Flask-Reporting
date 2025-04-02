@@ -18,3 +18,10 @@ from app.reports.ssrs import routes  # noqa
 from app.reports.ssrs.new_customer_accounts import bp as new_customer_accounts_bp
 
 bp.register_blueprint(new_customer_accounts_bp)
+
+# Import and register no_occupant_list_for_moveouts blueprint
+from app.reports.ssrs.no_occupant_list_for_moveouts import (
+    bp as no_occupant_list_for_moveouts_bp,
+)
+
+bp.register_blueprint(no_occupant_list_for_moveouts_bp)

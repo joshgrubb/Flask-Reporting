@@ -29,7 +29,13 @@ def index():
                 "name": "New Customer Accounts",
                 "description": "Report showing new customer account information",
                 "url": "/reports/ssrs/new_customer_accounts/",
-            }
+            },
+            {
+                "id": "no_occupant_list_for_moveouts",
+                "name": "No Occupant List for Moveouts",
+                "description": "Report showing addresses with moveouts that have no new occupants",
+                "url": "/reports/ssrs/no_occupant_list_for_moveouts/",
+            },
             # Add more reports as they are implemented
         ]
 
