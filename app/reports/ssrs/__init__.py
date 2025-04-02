@@ -25,3 +25,8 @@ from app.reports.ssrs.no_occupant_list_for_moveouts import (
 )
 
 bp.register_blueprint(no_occupant_list_for_moveouts_bp)
+
+# Import and register accounts_no_garbage blueprint
+from app.reports.ssrs.accounts_no_garbage import bp as accounts_no_garbage_bp
+
+bp.register_blueprint(accounts_no_garbage_bp)

@@ -36,6 +36,12 @@ def index():
                 "description": "Report showing addresses with moveouts that have no new occupants",
                 "url": "/reports/ssrs/no_occupant_list_for_moveouts/",
             },
+            {
+                "id": "accounts_no_garbage",
+                "name": "Accounts Without Garbage Service",
+                "description": "Report showing residential accounts without garbage service",
+                "url": "/reports/ssrs/accounts_no_garbage/",
+            },
             # Add more reports as they are implemented
         ]
 
