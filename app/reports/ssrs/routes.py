@@ -42,6 +42,12 @@ def index():
                 "description": "Report showing residential accounts without garbage service",
                 "url": "/reports/ssrs/accounts_no_garbage/",
             },
+            {
+                "id": "amount_billed_search",
+                "name": "Amount Billed Search",
+                "description": "Search for bill amounts in the system",
+                "url": "/reports/ssrs/amount_billed_search/",
+            },
             # Add more reports as they are implemented
         ]
 

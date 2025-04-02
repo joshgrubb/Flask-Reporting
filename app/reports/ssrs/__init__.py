@@ -30,3 +30,8 @@ bp.register_blueprint(no_occupant_list_for_moveouts_bp)
 from app.reports.ssrs.accounts_no_garbage import bp as accounts_no_garbage_bp
 
 bp.register_blueprint(accounts_no_garbage_bp)
+
+# Import and register amount_billed_search blueprint
+from app.reports.ssrs.amount_billed_search import bp as amount_billed_search_bp
+
+bp.register_blueprint(amount_billed_search_bp)
