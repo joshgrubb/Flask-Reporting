@@ -230,60 +230,56 @@ function initAccountTypeChart(data) {
 
     // Create new chart
     try {
-        window.accountTypeChart = new Chart(canvas, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: colors,
-                    borderColor: borderColors,
-                    borderWidth: 1
-                }]
-            },
+        window.accountTypeChart = window.chartThemeHelper.createChart('accountTypeChart', 'pie', {
+            labels: labels,
+            datasets: [{
+                data: values,
+                borderWidth: 1
+            }]
+        },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Distribution by Account Type'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribution by Account Type'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
                         }
                     }
                 }
             }
+        }
         });
-    } catch (error) {
-        console.error('Error creating chart:', error);
-        showError('Failed to create chart: ' + error.message);
-        return;
-    }
+} catch (error) {
+    console.error('Error creating chart:', error);
+    showError('Failed to create chart: ' + error.message);
+    return;
+}
 
-    // Update summary statistics
-    if (data.length > 0) {
-        // Find primary account type (most common)
-        data.sort((a, b) => b.AccountCount - a.AccountCount);
-        const primaryType = data[0]['Account Type'] || 'Unknown';
-        const primaryCount = data[0].AccountCount;
-        const total = values.reduce((sum, val) => sum + val, 0);
-        const percentage = Math.round((primaryCount / total) * 100);
+// Update summary statistics
+if (data.length > 0) {
+    // Find primary account type (most common)
+    data.sort((a, b) => b.AccountCount - a.AccountCount);
+    const primaryType = data[0]['Account Type'] || 'Unknown';
+    const primaryCount = data[0].AccountCount;
+    const total = values.reduce((sum, val) => sum + val, 0);
+    const percentage = Math.round((primaryCount / total) * 100);
 
-        $('#primaryAccountType').text(primaryType);
-        $('#primaryAccountTypeCount').text(`${primaryCount} accounts (${percentage}%)`);
-    }
+    $('#primaryAccountType').text(primaryType);
+    $('#primaryAccountTypeCount').text(`${primaryCount} accounts (${percentage}%)`);
+}
 }
 
 /**

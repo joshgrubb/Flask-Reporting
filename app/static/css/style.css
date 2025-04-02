@@ -1,56 +1,161 @@
-/* Enhanced styles for Flask Reporting Application */
+/* Enhanced styles for Flask Reporting Application - Masculine Color Scheme */
 
+/* Color Scheme Variables - Light Mode (Default) */
 :root {
-    --primary-color: #1976d2;
-    --primary-light: #e3f2fd;
-    --primary-dark: #0d47a1;
-    --secondary-color: #78909c;
-    --success-color: #2e7d32;
-    --warning-color: #ff9800;
-    --danger-color: #d32f2f;
-    --light-gray: #f8f9fa;
-    --dark-gray: #495057;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    /* Primary colors */
+    --primary-color: #1e40af;  /* Strong navy blue */
+    --primary-light: #dbeafe;
+    --primary-dark: #1e3a8a;
+    
+    /* Secondary colors */
+    --secondary-color: #0f766e;  /* Deep teal */
+    --secondary-light: #d1faf6;
+    --secondary-dark: #065f46;
+    
+    /* Accent colors */
+    --accent-color: #b45309;  /* Bold amber */
+    --accent-light: #fef3c7;
+    --accent-dark: #92400e;
+    
+    /* Neutral colors */
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #6b7280;
+    
+    /* Success, warning, error states */
+    --success-color: #15803d;  /* Forest green */
+    --success-light: #dcfce7;
+    --warning-color: #ca8a04;  /* Deep amber */
+    --warning-light: #fef9c3;
+    --danger-color: #b91c1c;  /* Deep red */
+    --danger-light: #fee2e2;
+    
+    /* Background and surfaces */
+    --background-color: #f9fafb;
+    --surface-color: #ffffff;
+    --card-background: #ffffff;
+    
+    /* Border and dividers */
+    --border-color: rgba(0, 0, 0, 0.1);
+    --divider-color: rgba(0, 0, 0, 0.06);
+    
+    /* RGB Values for opacity operations */
+    --primary-color-rgb: 30, 64, 175;
+    --secondary-color-rgb: 15, 118, 110;
+    --accent-color-rgb: 180, 83, 9;
+    --success-color-rgb: 21, 128, 61;
+    --warning-color-rgb: 202, 138, 4;
+    --danger-color-rgb: 185, 28, 28;
+    --background-color-rgb: 249, 250, 251;
+    
+    /* Effects */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.04);
     --transition: all 0.3s ease;
     --border-radius: 8px;
 }
 
+/* Dark Mode Variables */
+.dark-mode {
+    /* Primary colors */
+    --primary-color: #3b82f6;  /* Bright blue */
+    --primary-light: #1e3a8a;
+    --primary-dark: #93c5fd;
+    
+    /* Secondary colors */
+    --secondary-color: #14b8a6;  /* Teal */
+    --secondary-light: #134e4a;
+    --secondary-dark: #5eead4;
+    
+    /* Accent colors */
+    --accent-color: #f59e0b;  /* Amber */
+    --accent-light: #78350f;
+    --accent-dark: #fcd34d;
+    
+    /* Neutral colors */
+    --text-primary: #f9fafb;
+    --text-secondary: #e5e7eb;
+    --text-muted: #9ca3af;
+    
+    /* Success, warning, error states */
+    --success-color: #22c55e;  /* Green */
+    --success-light: #14532d;
+    --warning-color: #eab308;  /* Yellow */
+    --warning-light: #713f12;
+    --danger-color: #ef4444;  /* Red */
+    --danger-light: #7f1d1d;
+    
+    /* Background and surfaces */
+    --background-color: #111827;
+    --surface-color: #1f2937;
+    --card-background: #1f2937;
+    
+    /* Border and dividers */
+    --border-color: rgba(255, 255, 255, 0.1);
+    --divider-color: rgba(255, 255, 255, 0.06);
+    
+    /* RGB Values for opacity operations in dark mode */
+    --primary-color-rgb: 59, 130, 246;
+    --secondary-color-rgb: 20, 184, 166;
+    --accent-color-rgb: 245, 158, 11;
+    --success-color-rgb: 34, 197, 94;
+    --warning-color-rgb: 234, 179, 8;
+    --danger-color-rgb: 239, 68, 68;
+    --background-color-rgb: 17, 24, 39;
+    
+    /* Effects - softer shadows for dark mode */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Core styles */
 body {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, sans-serif;
-    color: #333;
-    background-color: #f5f7fa;
+    color: var(--text-primary);
+    background-color: var(--background-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode transition - smooth transition between light and dark */
+body, .card, .navbar, .table, .btn, .form-control, .alert, footer, .breadcrumb {
+    transition: 
+        background-color 0.3s ease, 
+        color 0.3s ease, 
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
 }
 
 /* Navbar styling */
 .navbar {
     box-shadow: var(--shadow-md);
-}
-
-.navbar-brand {
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-
-.navbar-dark.bg-primary {
     background-color: var(--primary-color) !important;
 }
 
-.nav-link {
+.navbar-dark .navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: white;
+}
+
+.navbar-dark .nav-link {
     font-weight: 500;
     padding: 0.7rem 1rem;
+    color: rgba(255, 255, 255, 0.85);
     transition: var(--transition);
 }
 
-.nav-link:hover {
+.navbar-dark .nav-link:hover {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
+    color: white;
 }
 
-.nav-link.active {
+.navbar-dark .nav-link.active {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
+    color: white;
 }
 
 /* Card enhancements */
@@ -60,6 +165,8 @@ body {
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
     overflow: hidden;
+    background-color: var(--card-background);
+    color: var(--text-primary);
 }
 
 .card:hover {
@@ -70,19 +177,32 @@ body {
     border-bottom: none;
     padding: 1rem 1.25rem;
     font-weight: 600;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
 }
 
 .card-header.bg-primary {
     background-color: var(--primary-color) !important;
+    color: white;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.card-footer {
+    background-color: var(--primary-light);
+    border-top: 1px solid var(--divider-color);
+    padding: 1rem 1.25rem;
 }
 
 /* Stats cards */
 .stats-card {
     border-left: 4px solid var(--primary-color);
-    background-color: white;
+    background-color: var(--card-background);
     transition: var(--transition);
-    padding: 0.5rem;
+    padding: 0.75rem 1rem;
 }
 
 .stats-card:hover {
@@ -98,7 +218,7 @@ body {
 }
 
 .stats-card .card-title {
-    color: var(--dark-gray);
+    color: var(--text-secondary);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -106,12 +226,13 @@ body {
 }
 
 .stats-card .text-muted {
+    color: var(--text-muted) !important;
     font-size: 0.875rem;
 }
 
 /* Filter section */
 .filters {
-    background-color: white;
+    background-color: var(--card-background);
     border-radius: var(--border-radius);
     padding: 1.25rem;
     margin-bottom: 1.5rem;
@@ -121,21 +242,32 @@ body {
 .form-label {
     font-weight: 500;
     margin-bottom: 0.5rem;
-    color: var(--dark-gray);
+    color: var(--text-secondary);
 }
 
 .form-control {
     border-radius: 6px;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--border-color);
     padding: 0.6rem 0.75rem;
     transition: var(--transition);
+    background-color: var(--surface-color);
+    color: var(--text-primary);
 }
 
 .form-control:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
 }
 
+.dark-mode .form-control::placeholder {
+    color: var(--text-muted);
+}
+
+.dark-mode .form-control {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Button styling */
 .btn {
     border-radius: 6px;
     padding: 0.6rem 1rem;
@@ -151,7 +283,7 @@ body {
     border-color: var(--primary-color);
 }
 
-.btn-primary:hover {
+.btn-primary:hover, .btn-primary:focus {
     background-color: var(--primary-dark);
     border-color: var(--primary-dark);
     box-shadow: var(--shadow-sm);
@@ -162,9 +294,61 @@ body {
     border-color: var(--success-color);
 }
 
+.btn-success:hover, .btn-success:focus {
+    background-color: var(--success-color);
+    filter: brightness(90%);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-outline-secondary {
+    color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
 .btn-outline-secondary:hover {
     background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
+    color: white;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: var(--border-radius);
+    border: none;
+    padding: 1rem;
+}
+
+.alert-success {
+    background-color: var(--success-light);
+    color: var(--success-color);
+}
+
+.alert-warning {
+    background-color: var(--warning-light);
+    color: var(--warning-color);
+}
+
+.alert-danger {
+    background-color: var(--danger-light);
+    color: var(--danger-color);
+}
+
+.alert-info {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
 }
 
 /* Chart containers */
@@ -172,7 +356,7 @@ body {
     height: 400px;
     position: relative;
     width: 100%;
-    background-color: white;
+    background-color: var(--card-background);
     padding: 1rem;
     border-radius: 8px;
 }
@@ -190,7 +374,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(var(--background-color-rgb, 255, 255, 255), 0.8);
     z-index: 1000;
     border-radius: var(--border-radius);
     display: flex;
@@ -214,6 +398,11 @@ body {
     animation: spinner 0.8s linear infinite;
 }
 
+.dark-mode .loading:before {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary-color);
+}
+
 @keyframes spinner {
     to {transform: rotate(360deg);}
 }
@@ -227,25 +416,38 @@ body {
 }
 
 .table thead th {
-    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 2px solid var(--divider-color);
     font-weight: 600;
-    color: var(--dark-gray);
-    background-color: var(--light-gray);
+    color: var(--text-secondary);
+    background-color: var(--primary-light);
     padding: 1rem;
 }
 
 .table tbody td {
     padding: 1rem;
     vertical-align: middle;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--divider-color);
+    color: var(--text-primary);
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
     background-color: rgba(0, 0, 0, 0.02);
 }
 
+.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
 .table-hover tbody tr:hover {
-    background-color: rgba(25, 118, 210, 0.05);
+    background-color: rgba(var(--primary-color-rgb), 0.05);
+}
+
+.dark-mode .table-hover tbody tr:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.dark-mode .table {
+    color: var(--text-primary);
 }
 
 /* Breadcrumb styling */
@@ -268,15 +470,125 @@ body {
 
 .breadcrumb-item + .breadcrumb-item::before {
     content: "›";
-    color: var(--secondary-color);
+    color: var(--text-muted);
+}
+
+.breadcrumb-item.active {
+    color: var(--text-secondary);
 }
 
 /* Footer styling */
 footer {
-    background-color: white !important;
+    background-color: var(--surface-color) !important;
     box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
     padding: 1.5rem 0;
     margin-top: 3rem;
+    color: var(--text-secondary);
+}
+
+footer .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Back to top button styling */
+#back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: none;
+    width: 40px;
+    height: 40px;
+    z-index: 99;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#back-to-top.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.7;
+}
+
+#back-to-top:hover {
+    opacity: 1;
+    transform: translateY(-5px);
+}
+
+/* Page loader animation */
+#page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--background-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.3s ease;
+}
+
+#page-loader.loaded {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Dark mode color adaptations for DataTables */
+.dark-mode .dataTables_wrapper .dataTables_length,
+.dark-mode .dataTables_wrapper .dataTables_filter,
+.dark-mode .dataTables_wrapper .dataTables_info,
+.dark-mode .dataTables_wrapper .dataTables_processing,
+.dark-mode .dataTables_wrapper .dataTables_paginate {
+    color: var(--text-primary);
+}
+
+.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: var(--text-secondary) !important;
+}
+
+.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: var(--primary-color);
+    color: white !important;
+    border-color: var(--primary-dark);
+}
+
+.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: var(--primary-light);
+    color: var(--primary-dark) !important;
+}
+
+/* Custom report-specific styles */
+/* Custom coloring for No Occupant List for Moveouts report */
+.days-critical {
+    color: var(--danger-color);
+    font-weight: bold;
+}
+
+.days-warning {
+    color: var(--warning-color);
+}
+
+.days-normal {
+    color: var(--success-color);
+}
+
+/* Highlight search term in Amount Billed Search */
+.highlight {
+    background-color: var(--warning-light);
+    color: var(--warning-color);
+    padding: 0.1rem 0.25rem;
+    border-radius: 0.2rem;
+}
+
+/* Custom coloring for Accounts No Garbage */
+.no-garbage {
+    background-color: rgba(var(--warning-color-rgb), 0.05);
 }
 
 /* Responsive adjustments */
@@ -300,5 +612,9 @@ footer {
     
     .filters form {
         flex-direction: column;
+    }
+    
+    .filters form .btn {
+        margin-top: 0.5rem;
     }
 }
