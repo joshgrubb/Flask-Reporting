@@ -3,6 +3,7 @@
  * 
  * This file handles the interactive functionality for the New Customer Accounts report,
  * including loading data, initializing charts, and handling user interactions.
+ * Updated for compatibility with latest Chart.js v4.x and DataTables 1.13.x
  */
 
 // Document ready function
@@ -144,8 +145,6 @@ function initDataTable(data) {
         ],
         pageLength: 10,
         order: [[6, 'desc']], // Sort by Move-In Date, newest first
-        dom: 'Bfrtip',
-        buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
         language: {
             search: "Search:",
             lengthMenu: "Show _MENU_ entries",
@@ -186,21 +185,15 @@ function initAccountTypeChart(data) {
     }
 
     // Safely destroy existing chart if it exists
-    // Check both the window object and the canvas object
-    if (window.accountTypeChart) {
-        if (typeof window.accountTypeChart.destroy === 'function') {
-            window.accountTypeChart.destroy();
-        } else {
-            // If the chart object exists but doesn't have a destroy method,
-            // it might be corrupted, so we'll clear it.
-            window.accountTypeChart = null;
+    let existingChart;
+    try {
+        // Chart.js v4.x method
+        existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
         }
-    }
-
-    // Check if there's a Chart instance attached to the canvas
-    const chartInstance = Chart.getChart(canvas);
-    if (chartInstance) {
-        chartInstance.destroy();
+    } catch (e) {
+        console.log('No existing chart found or using older Chart.js version');
     }
 
     // Prepare data for the chart
@@ -228,9 +221,10 @@ function initAccountTypeChart(data) {
         'rgba(201, 203, 207, 1)'
     ];
 
-    // Create new chart
+    // Create new chart - Updated for Chart.js v4.x
     try {
-        window.accountTypeChart = new Chart(canvas, {
+        // Chart configuration compatible with Chart.js v4.x
+        new Chart(canvas, {
             type: 'pie',
             data: {
                 labels: labels,
@@ -306,20 +300,15 @@ function initDailyAccountsChart(data) {
     }
 
     // Safely destroy existing chart if it exists
-    if (window.dailyAccountsChart) {
-        if (typeof window.dailyAccountsChart.destroy === 'function') {
-            window.dailyAccountsChart.destroy();
-        } else {
-            // If the chart object exists but doesn't have a destroy method,
-            // it might be corrupted, so we'll clear it.
-            window.dailyAccountsChart = null;
+    let existingChart;
+    try {
+        // Chart.js v4.x method
+        existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
         }
-    }
-
-    // Check if there's a Chart instance attached to the canvas
-    const chartInstance = Chart.getChart(canvas);
-    if (chartInstance) {
-        chartInstance.destroy();
+    } catch (e) {
+        console.log('No existing chart found or using older Chart.js version');
     }
 
     // Format dates for display
@@ -329,9 +318,9 @@ function initDailyAccountsChart(data) {
         rawDate: new Date(item.MoveInDate)
     })).sort((a, b) => a.rawDate - b.rawDate);
 
-    // Create new chart
+    // Create new chart - Updated for Chart.js v4.x
     try {
-        window.dailyAccountsChart = new Chart(canvas, {
+        new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: formattedData.map(item => item.date),

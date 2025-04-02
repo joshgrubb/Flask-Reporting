@@ -12,6 +12,9 @@ from config import config
 # Import database functions
 from app.core.database import close_db_connection
 
+# Import template helpers
+from app.core.template_helpers import register_template_helpers
+
 
 def create_app(config_name=None):
     """
@@ -42,6 +45,9 @@ def create_app(config_name=None):
 
     # Register database connection teardown
     app.teardown_appcontext(close_db_connection)
+
+    # Register template helpers
+    register_template_helpers(app)
 
     # Register blueprints
     from app.reports import bp as reports_bp
