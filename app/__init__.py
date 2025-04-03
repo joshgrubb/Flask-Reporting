@@ -50,15 +50,21 @@ def create_app(config_name=None):
     register_template_helpers(app)
 
     # Register blueprints
+    from app.groups import bp as groups_bp
+
+    app.register_blueprint(groups_bp)
+
+    # For backward compatibility, keep the reports blueprint
+    # This can be removed once all reports are migrated to the new structure
     from app.reports import bp as reports_bp
 
     app.register_blueprint(reports_bp)
 
     @app.route("/")
     def index():
-        """Main application route redirects to reports dashboard."""
+        """Main application route redirects to groups dashboard."""
         from flask import redirect, url_for
 
-        return redirect(url_for("reports.index"))
+        return redirect(url_for("groups.index"))
 
     return app
