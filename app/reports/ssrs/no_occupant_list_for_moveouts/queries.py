@@ -129,7 +129,7 @@ def get_moveouts_without_occupants(start_date=None, end_date=None):
     logger.info(
         f"Generated moveouts without occupants query for period {start_date_str} to {end_date_str}"
     )
-    return query, tuple(params)
+    return query, tuple(params), "nws"
 
 
 def get_moveouts_summary(start_date=None, end_date=None):
@@ -264,4 +264,4 @@ def get_moveouts_summary(start_date=None, end_date=None):
     logger.info(
         f"Generated moveouts summary query for period {start_date_str} to {end_date_str}"
     )
-    return query, tuple(params)
+    return query, tuple(params), "nws"

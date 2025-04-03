@@ -109,7 +109,7 @@ def get_accounts_no_garbage():
     logger.info("Generated accounts no garbage query")
 
     # No parameters for this query since it uses GETDATE() internally
-    return query, ()
+    return query, (), "nws"
 
 
 def get_street_summary():
@@ -215,4 +215,4 @@ def get_street_summary():
     logger.info("Generated street summary query for accounts without garbage service")
 
     # No parameters for this query
-    return query, ()
+    return query, (), "nws"

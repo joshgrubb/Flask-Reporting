@@ -57,4 +57,4 @@ def get_bill_amount_search(amount):
     # Parameters
     params = (search_amount,)
 
-    return query, params
+    return query, params, "nws"

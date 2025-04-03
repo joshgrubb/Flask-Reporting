@@ -57,10 +57,10 @@ def search():
             )
 
         # Get query and parameters
-        query, params = get_bill_amount_search(amount)
+        query, params, db_key = get_bill_amount_search(amount)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify(
@@ -106,10 +106,10 @@ def export():
             )
 
         # Get query and parameters
-        query, params = get_bill_amount_search(amount)
+        query, params, db_key = get_bill_amount_search(amount)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         if not results:
             return (

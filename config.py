@@ -17,10 +17,15 @@ class Config:
 
     SECRET_KEY = os.environ.get("SECRET_KEY") or "your-secret-key-here"
 
-    # Database configuration for Windows Authentication
-    DB_DRIVER = os.environ.get("DB_DRIVER", "ODBC Driver 18 for SQL Server")
-    DB_SERVER = os.environ.get("DB_SERVER", "toc-nwsdb-01")
-    DB_NAME = os.environ.get("DB_NAME", "LogosDB")
+    # New World database configuration (NWS)
+    NWS_DB_DRIVER = os.environ.get("NWS_DB_DRIVER", "ODBC Driver 18 for SQL Server")
+    NWS_DB_SERVER = os.environ.get("NWS_DB_SERVER", "toc-nwsdb-01")
+    NWS_DB_NAME = os.environ.get("NWS_DB_NAME", "LogosDB")
+
+    # CityWorks database configuration (CW)
+    CW_DB_DRIVER = os.environ.get("CW_DB_DRIVER", "ODBC Driver 18 for SQL Server")
+    CW_DB_SERVER = os.environ.get("CW_DB_SERVER", "TOC-CW-SVR-01")
+    CW_DB_NAME = os.environ.get("CW_DB_NAME", "CW")
 
     # No username/password needed for Windows Authentication
 
@@ -44,7 +49,8 @@ class TestingConfig(Config):
 
     DEBUG = True
     TESTING = True
-    DB_NAME = os.environ.get("TEST_DB_NAME", "test_db")
+    NWS_DB_NAME = os.environ.get("TEST_NWS_DB_NAME", "test_db")
+    CW_DB_NAME = os.environ.get("TEST_CW_DB_NAME", "test_cw_db")
 
 
 class ProductionConfig(Config):

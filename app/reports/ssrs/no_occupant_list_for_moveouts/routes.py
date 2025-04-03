@@ -73,10 +73,10 @@ def get_report_data():
             )
 
         # Get query and parameters
-        query, params = get_moveouts_without_occupants(start_date, end_date)
+        query, params, db_key = get_moveouts_without_occupants(start_date, end_date)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify(
@@ -124,10 +124,10 @@ def get_summary_data():
             )
 
         # Get query and parameters
-        query, params = get_moveouts_summary(start_date, end_date)
+        query, params, db_key = get_moveouts_summary(start_date, end_date)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify(
@@ -178,10 +178,10 @@ def export_report():
             )
 
         # Get query and parameters
-        query, params = get_moveouts_without_occupants(start_date, end_date)
+        query, params, db_key = get_moveouts_without_occupants(start_date, end_date)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         if not results:
             return jsonify({"success": False, "error": "No data to export"}), 404

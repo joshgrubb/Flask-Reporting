@@ -114,7 +114,7 @@ def get_new_customer_accounts(move_in_date=None):
     logger.info(
         f"Generated new customer accounts query with move-in date >= {move_in_date_str}"
     )
-    return query, tuple(params)
+    return query, tuple(params), "nws"
 
 
 def get_account_type_summary(move_in_date=None):
@@ -163,7 +163,7 @@ def get_account_type_summary(move_in_date=None):
     logger.info(
         f"Generated account type summary query with move-in date >= {move_in_date_str}"
     )
-    return query, tuple(params)
+    return query, tuple(params), "nws"
 
 
 def get_daily_new_accounts(move_in_date=None):
@@ -210,4 +210,4 @@ def get_daily_new_accounts(move_in_date=None):
     logger.info(
         f"Generated daily new accounts query with move-in date >= {move_in_date_str}"
     )
-    return query, tuple(params)
+    return query, tuple(params), "nws"

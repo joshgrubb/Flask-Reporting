@@ -4,18 +4,17 @@ Accounts No Garbage Routes.
 This module defines the routes for the Accounts No Garbage report blueprint.
 """
 
-import logging
-from flask import render_template, request, jsonify, Response
 import csv
-from io import StringIO
+import logging
 from datetime import datetime
+from io import StringIO
+
+from flask import Response, jsonify, render_template, request
 
 from app.core.database import execute_query
 from app.reports.ssrs.accounts_no_garbage import bp
 from app.reports.ssrs.accounts_no_garbage.queries import (
-    get_accounts_no_garbage,
-    get_street_summary,
-)
+    get_accounts_no_garbage, get_street_summary)
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -50,10 +49,10 @@ def get_report_data():
     """
     try:
         # Get query and parameters
-        query, params = get_accounts_no_garbage()
+        query, params, db_key = get_accounts_no_garbage()
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify({"success": True, "data": results, "count": len(results)})
@@ -73,10 +72,10 @@ def get_streets_data():
     """
     try:
         # Get query and parameters
-        query, params = get_street_summary()
+        query, params, db_key = get_street_summary()
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify({"success": True, "data": results, "count": len(results)})
@@ -96,10 +95,10 @@ def export_report():
     """
     try:
         # Get query and parameters
-        query, params = get_accounts_no_garbage()
+        query, params, db_key = get_accounts_no_garbage()
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         if not results:
             return jsonify({"success": False, "error": "No data to export"}), 404

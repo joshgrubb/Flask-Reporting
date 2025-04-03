@@ -72,10 +72,10 @@ def get_report_data():
             )
 
         # Get query and parameters
-        query, params = get_new_customer_accounts(move_in_date)
+        query, params, db_key = get_new_customer_accounts(move_in_date)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify(
@@ -120,10 +120,10 @@ def get_account_types():
             )
 
         # Get query and parameters
-        query, params = get_account_type_summary(move_in_date)
+        query, params, db_key = get_account_type_summary(move_in_date)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify(
@@ -167,10 +167,10 @@ def get_daily_accounts():
             )
 
         # Get query and parameters
-        query, params = get_daily_new_accounts(move_in_date)
+        query, params, db_key = get_daily_new_accounts(move_in_date)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         # Return data as JSON
         return jsonify(
@@ -218,10 +218,10 @@ def export_report():
             )
 
         # Get query and parameters
-        query, params = get_new_customer_accounts(move_in_date)
+        query, params, db_key = get_new_customer_accounts(move_in_date)
 
         # Execute query
-        results = execute_query(query, params)
+        results = execute_query(query, params, db_key=db_key)
 
         if not results:
             return jsonify({"success": False, "error": "No data to export"}), 404

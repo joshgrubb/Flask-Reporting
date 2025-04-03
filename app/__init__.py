@@ -10,7 +10,7 @@ from flask import Flask
 from config import config
 
 # Import database functions
-from app.core.database import close_db_connection
+from app.core.database import close_db_connections
 
 # Import template helpers
 from app.core.template_helpers import register_template_helpers
@@ -44,7 +44,7 @@ def create_app(config_name=None):
     )
 
     # Register database connection teardown
-    app.teardown_appcontext(close_db_connection)
+    app.teardown_appcontext(close_db_connections)
 
     # Register template helpers
     register_template_helpers(app)
