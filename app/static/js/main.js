@@ -465,3 +465,223 @@ function showAlert(message, type = 'info', duration = 3000) {
         }, duration);
     }
 }
+/**
+ * Enhanced DataTables Dark Mode Fixer
+ * 
+ * This script specifically targets DataTables elements with more aggressive approach
+ * to force style changes in both light and dark modes.
+ */
+
+class EnhancedDataTablesDarkModeFixer {
+    constructor() {
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            this.init();
+        });
+    }
+
+    init() {
+        // Add a small delay to ensure DataTables are initialized
+        setTimeout(() => {
+            this.applyStyles();
+
+            // Set up continuous checking for the first minute (to handle delayed loading)
+            let checkCount = 0;
+            const checkInterval = setInterval(() => {
+                this.applyStyles();
+                checkCount++;
+                if (checkCount >= 6) { // Check for 1 minute (6 x 10 seconds)
+                    clearInterval(checkInterval);
+                }
+            }, 10000); // Check every 10 seconds
+        }, 500);
+
+        // Set up listeners for theme changes
+        this.setupListeners();
+    }
+
+    setupListeners() {
+        // Listen for theme toggle clicks
+        const themeToggle = document.getElementById('toggle-theme');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                // Apply styles immediately and then again after a delay
+                setTimeout(() => this.applyStyles(), 50);
+                setTimeout(() => this.applyStyles(), 200);
+                setTimeout(() => this.applyStyles(), 500);
+            });
+        }
+
+        // Watch for class changes on HTML element
+        if (typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'class') {
+                        // Apply styles immediately and then again after a delay
+                        this.applyStyles();
+                        setTimeout(() => this.applyStyles(), 200);
+                    }
+                });
+            });
+
+            observer.observe(document.documentElement, { attributes: true });
+        }
+
+        // Handle AJAX completions which might refresh tables
+        if (typeof $ !== 'undefined' && $.fn && $.fn.dataTable) {
+            $(document).ajaxComplete(() => {
+                setTimeout(() => this.applyStyles(), 200);
+            });
+        }
+    }
+
+    applyStyles() {
+        const isDarkMode = document.documentElement.classList.contains('dark-mode');
+
+        // Define colors based on the current mode
+        const colors = {
+            background: isDarkMode ? '#1f2937' : '#ffffff',
+            text: isDarkMode ? '#f9fafb' : '#1f2937',
+            headerBg: isDarkMode ? '#2d3748' : '#f1f5f9',
+            headerText: isDarkMode ? '#e5e7eb' : '#1f2937',
+            stripeBg: isDarkMode ? '#111827' : '#edf2f7', // Darker in dark mode, lighter blue-gray in light mode
+            hoverBg: isDarkMode ? '#3b4c69' : '#e3e8f0',  // Enhanced hover contrast
+            border: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+        };
+
+        // Get all DataTables
+        this.forceStyleDataTables(colors);
+    }
+
+    forceStyleDataTables(colors) {
+        // Target all potential DataTables
+        const tables = document.querySelectorAll('.dataTable, table.display, table.cell-border, table.stripe, table.hover, table.order-column');
+        if (tables.length === 0) return;
+
+        tables.forEach(table => {
+            // Force styles using !important
+            this.addStyleTag(`
+                #${table.id} {
+                    background-color: ${colors.background} !important;
+                    color: ${colors.text} !important;
+                }
+                
+                #${table.id} thead th, 
+                #${table.id} thead td {
+                    background-color: ${colors.headerBg} !important;
+                    color: ${colors.headerText} !important;
+                    border-color: ${colors.border} !important;
+                }
+                
+                #${table.id} tbody tr {
+                    background-color: ${colors.background} !important;
+                    color: ${colors.text} !important;
+                }
+                
+                #${table.id} tbody tr.odd {
+                    background-color: ${colors.stripeBg} !important;
+                }
+                
+                #${table.id} tbody tr:hover {
+                    background-color: ${colors.hoverBg} !important;
+                }
+                
+                #${table.id} tbody td {
+                    background-color: transparent !important;
+                    color: ${colors.text} !important;
+                    border-color: ${colors.border} !important;
+                }
+                
+                .dataTables_wrapper .dataTables_length, 
+                .dataTables_wrapper .dataTables_filter, 
+                .dataTables_wrapper .dataTables_info, 
+                .dataTables_wrapper .dataTables_processing, 
+                .dataTables_wrapper .dataTables_paginate {
+                    color: ${colors.text} !important;
+                }
+                
+                .dataTables_wrapper .dataTables_filter input,
+                .dataTables_wrapper .dataTables_length select {
+                    background-color: ${colors.background} !important;
+                    color: ${colors.text} !important;
+                    border: 1px solid ${colors.border} !important;
+                }
+            `);
+
+            // Also apply direct styles to the elements
+            try {
+                // Style table
+                table.style.setProperty('background-color', colors.background, 'important');
+                table.style.setProperty('color', colors.text, 'important');
+
+                // Style headers
+                const headers = table.querySelectorAll('thead th, thead td');
+                headers.forEach(header => {
+                    header.style.setProperty('background-color', colors.headerBg, 'important');
+                    header.style.setProperty('color', colors.headerText, 'important');
+                });
+
+                // Style all rows directly
+                const allRows = table.querySelectorAll('tbody tr');
+                allRows.forEach(row => {
+                    // Base styling for all rows
+                    row.style.setProperty('background-color', colors.background, 'important');
+                    row.style.setProperty('color', colors.text, 'important');
+
+                    // Special styling for odd rows
+                    if (row.classList.contains('odd')) {
+                        row.style.setProperty('background-color', colors.stripeBg, 'important');
+                    }
+
+                    // Style all cells in the row
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach(cell => {
+                        cell.style.setProperty('background-color', 'transparent', 'important');
+                        cell.style.setProperty('color', colors.text, 'important');
+                    });
+                });
+            } catch (error) {
+                console.error('Error applying styles directly:', error);
+            }
+        });
+    }
+
+    addStyleTag(css) {
+        // Create an ID based on the CSS content to avoid duplicates
+        const hash = this.hashString(css);
+        const id = `datatable-fix-${hash}`;
+
+        // Check if style already exists
+        if (!document.getElementById(id)) {
+            const style = document.createElement('style');
+            style.id = id;
+            style.type = 'text/css';
+            style.innerHTML = css;
+            document.head.appendChild(style);
+        }
+    }
+
+    hashString(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(16).substring(0, 8);
+    }
+}
+
+// Initialize the enhanced fixer
+const enhancedDataTablesFixer = new EnhancedDataTablesDarkModeFixer();
+
+// Handle any DataTables that might be initialized after this script runs
+if (typeof $ !== 'undefined') {
+    $(document).on('init.dt', function () {
+        setTimeout(() => {
+            if (enhancedDataTablesFixer) {
+                enhancedDataTablesFixer.applyStyles();
+            }
+        }, 100);
+    });
+}
