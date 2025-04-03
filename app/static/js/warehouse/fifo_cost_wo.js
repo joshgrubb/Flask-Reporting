@@ -160,6 +160,17 @@ function initDataTable(data) {
                 }
             },
             {
+                data: null,
+                render: function (data) {
+                    // Show account status
+                    if (data.MISSING_ACCT) {
+                        return '<span class="badge bg-danger">Missing Accounts</span>';
+                    } else {
+                        return '<span class="badge bg-success">Complete</span>';
+                    }
+                }
+            },
+            {
                 data: 'TOTAL_COST',
                 render: function (data) {
                     return formatCurrency(data);
@@ -167,7 +178,7 @@ function initDataTable(data) {
             }
         ],
         pageLength: 10,
-        order: [[1, 'desc']], // Sort by date, newest first
+        order: [[5, 'desc']], // Sort by date, newest first
         language: {
             search: "Search:",
             lengthMenu: "Show _MENU_ entries",
@@ -237,6 +248,7 @@ function showWorkOrderDetails(workOrder) {
                                     <th>Material ID</th>
                                     <th>Description</th>
                                     <th>Units</th>
+                                    <th>GL Account</th>
                                     <th>Cost</th>
                                 </tr>
                             </thead>
@@ -269,18 +281,23 @@ function showWorkOrderDetails(workOrder) {
 
     if (workOrder.ITEMS && workOrder.ITEMS.length > 0) {
         workOrder.ITEMS.forEach(item => {
+            // Check if the account number is missing
+            const acctNumClass = (!item.ACCTNUM || item.ACCTNUM === '') ? 'text-danger fw-bold' : '';
+            const acctNumDisplay = (!item.ACCTNUM || item.ACCTNUM === '') ? 'Missing' : item.ACCTNUM;
+
             const row = `
             <tr>
                 <td>${item.MATERIALUID || 'N/A'}</td>
                 <td>${item.DESCRIPTION || 'N/A'}</td>
                 <td>${item.UNITSREQUIRED || '1'}</td>
+                <td class="${acctNumClass}">${acctNumDisplay}</td>
                 <td>${formatCurrency(item.COST)}</td>
             </tr>
             `;
             itemsBody.append(row);
         });
     } else {
-        itemsBody.append('<tr><td colspan="4" class="text-center">No items found</td></tr>');
+        itemsBody.append('<tr><td colspan="5" class="text-center">No items found</td></tr>');
     }
 
     // Show the modal

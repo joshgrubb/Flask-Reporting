@@ -93,6 +93,7 @@ def get_report_data():
                     "TRANSDATE": row["TRANSDATE"],
                     "ITEMS": [],
                     "TOTAL_COST": 0,
+                    "MISSING_ACCT": False,
                 }
 
             # Add the material item
@@ -102,11 +103,16 @@ def get_report_data():
                     "DESCRIPTION": row["DESCRIPTION"],
                     "UNITSREQUIRED": row["UNITSREQUIRED"],
                     "COST": row["COST"],
+                    "ACCTNUM": row["ACCTNUM"],
                 }
             )
 
             # Add to total cost
             work_orders[wo_id]["TOTAL_COST"] += float(row["COST"] or 0)
+
+            # Check if this item is missing an account number
+            if row["ACCTNUM"] is None or row["ACCTNUM"] == "":
+                work_orders[wo_id]["MISSING_ACCT"] = True
 
         # Convert to list for JSON
         work_order_list = list(work_orders.values())
