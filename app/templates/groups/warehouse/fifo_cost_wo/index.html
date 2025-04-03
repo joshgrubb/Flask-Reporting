@@ -29,11 +29,13 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label for="startDate" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="startDate" name="start_date">
+                        <input type="date" class="form-control" id="startDate" name="start_date"
+                            value="{{ default_start_date }}">
                     </div>
                     <div class="col-md-3">
                         <label for="endDate" class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="endDate" name="end_date">
+                        <input type="date" class="form-control" id="endDate" name="end_date"
+                            value="{{ default_end_date }}">
                     </div>
                     <div class="col-md-6">
                         <button type="button" id="applyFilters" class="btn btn-primary">
@@ -52,7 +54,7 @@
     </div>
 </div>
 
-<!-- Summary Stats (Placeholder) -->
+<!-- Summary Stats -->
 <div class="row mb-4">
     <div class="col-md-4">
         <div class="card stats-card h-100">
@@ -103,7 +105,7 @@
                             <tr>
                                 <th>Work Order #</th>
                                 <th>Date</th>
-                                <th>Department</th>
+                                <th>Category</th>
                                 <th>Description</th>
                                 <th>Inventory Items</th>
                                 <th>FIFO Cost</th>
@@ -118,9 +120,13 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Work Order Details (will be created dynamically) -->
+<!-- The modal will be injected here by JavaScript -->
+
 {% endblock %}
 
 {% block scripts %}
-<!-- This script will be implemented later -->
+<!-- Custom JS for this report -->
 <script src="{{ url_for('static', filename='js/warehouse/fifo_cost_wo.js') }}"></script>
 {% endblock %}

@@ -34,7 +34,7 @@ def index():
         start_date = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
 
         return render_template(
-            "ssrs/no_occupant_list_for_moveouts/index.html",
+            "groups/utilities_billing/no_occupant_list_for_moveouts/index.html",
             title="No Occupant List for Moveouts Report",
             default_start_date=start_date,
             default_end_date=end_date,
