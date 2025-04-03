@@ -18,16 +18,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Core CDN resources (Bootstrap, jQuery, Font Awesome) -->
+    {{ include_cdn(bundles=["core"]) }}
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+    <!-- Page-specific styles -->
     {% block styles %}{% endblock %}
+
+    <!-- Page-specific CDN resources -->
+    {% block cdn_resources %}{% endblock %}
 
     <!-- Preload critical resources -->
     <link rel="preload" href="{{ url_for('static', filename='img/loading.gif') }}" as="image">
@@ -137,18 +138,13 @@
         </div>
     </footer>
 
-    <!-- Bootstrap JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- Custom JS - Updated to use our enhanced scripts -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
     <!-- Chart.js Theme Helper -->
     <script src="{{ url_for('static', filename='js/chart-theme-helper.js') }}"></script>
 
+    <!-- Main application JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Page-specific scripts -->
     {% block scripts %}{% endblock %}
 </body>
 

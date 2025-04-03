@@ -2,13 +2,8 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block styles %}
-<!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-<!-- DatePicker CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<!-- Custom CSS for this report -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block cdn_resources %}
+{{ include_cdn(bundles=["datatables", "chartjs", "datepicker"]) }}
 {% endblock %}
 
 {% block content %}
@@ -115,16 +110,6 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- DatePicker JS -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
 <!-- Custom JS for this report -->
 <script src="{{ url_for('static', filename='js/no_occupant_list_for_moveouts.js') }}"></script>
 {% endblock %}

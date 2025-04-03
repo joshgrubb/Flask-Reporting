@@ -30,14 +30,10 @@ class CDNResourceManager:
         "bootstrap-css": {
             "type": TYPE_CSS,
             "url": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
-            "integrity": "sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD",
-            "crossorigin": "anonymous",
         },
         "fontawesome-css": {
             "type": TYPE_CSS,
             "url": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css",
-            "integrity": "sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==",
-            "crossorigin": "anonymous",
         },
         "datatables-css": {
             "type": TYPE_CSS,
@@ -51,24 +47,18 @@ class CDNResourceManager:
         "bootstrap-js": {
             "type": TYPE_JS,
             "url": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js",
-            "integrity": "sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN",
-            "crossorigin": "anonymous",
         },
         "jquery": {
             "type": TYPE_JS,
             "url": "https://code.jquery.com/jquery-3.7.1.min.js",
-            "integrity": "sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=",
-            "crossorigin": "anonymous",
         },
         "chartjs": {
             "type": TYPE_JS,
             "url": "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js",
-            "integrity": "sha384-w9Ey4j1/VuLPGuxMhm+0CeLtqzRH/Uw+a8YbEa5LbZDc6UJKf5GhXfBpjiPGpM4n",
-            "crossorigin": "anonymous",
         },
         "datatables-js": {
             "type": TYPE_JS,
-            "url": "https://cdn.datatables.net/2.2.2/js/jquery.dataTables.min.js",
+            "url": "https://cdn.datatables.net/2.2.2/js/dataTables.min.js",
         },
         "datatables-bs5-js": {
             "type": TYPE_JS,
