@@ -1,7 +1,7 @@
 """
-Utilities Billing Group Module.
+Warehouse Group Module.
 
-This module defines the blueprint for the Utilities Billing group.
+This module defines the blueprint for the Warehouse group.
 """
 
 from flask import Blueprint
@@ -18,6 +18,9 @@ bp = Blueprint(
 from app.groups.warehouse import routes  # noqa
 
 # Import and register report blueprints
-from app.groups.warehouse.fifo_cost_wo import (
-    bp as fifo_cost_wo_bp,
-)  # noqa
+# Import the report blueprints after the main blueprint has been created
+# to avoid circular imports
+from app.groups.warehouse.fifo_cost_wo import bp as fifo_cost_wo_bp  # noqa
+
+# Register the report blueprints
+bp.register_blueprint(fifo_cost_wo_bp)

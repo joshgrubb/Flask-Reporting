@@ -54,11 +54,8 @@ def create_app(config_name=None):
 
     app.register_blueprint(groups_bp)
 
-    # For backward compatibility, keep the reports blueprint
-    # This can be removed once all reports are migrated to the new structure
-    from app.reports import bp as reports_bp
-
-    app.register_blueprint(reports_bp)
+    # Note: The reports blueprint has been removed as all reports
+    # have been migrated to the new groups structure
 
     @app.route("/")
     def index():

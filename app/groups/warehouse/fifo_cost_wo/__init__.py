@@ -15,4 +15,5 @@ bp = Blueprint(
 )
 
 # Import routes at the bottom to avoid circular imports
+# This import is moved to the bottom after bp is defined to avoid circular imports
 from app.groups.warehouse.fifo_cost_wo import routes  # noqa

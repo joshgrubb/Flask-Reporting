@@ -5,9 +5,9 @@ This module defines routes for the main Warehouse dashboard.
 """
 
 import logging
-from flask import render_template, current_app
+from flask import render_template
 
-from app.groups.utilities_billing import bp
+from app.groups.warehouse import bp
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -27,10 +27,10 @@ def index():
             {
                 "id": "fifo_cost_wo",
                 "name": "FIFO Work Order Costs",
-                "description": "Report showing new customer account information",
+                "description": "Report showing work order costs using FIFO inventory method",
                 "url": "/groups/warehouse/fifo_cost_wo/",
+                "icon": "fas fa-clipboard-list",
             },
-            
             # Add more reports as they are implemented
         ]
 
@@ -38,9 +38,11 @@ def index():
         logger.info("Rendering Warehouse dashboard with %d reports", len(reports))
 
         return render_template(
-            "warehouse/dashboard.html", title="Warehouse Reports Dashboard", reports=reports
+            "groups/warehouse/dashboard.html",
+            title="Warehouse Reports",
+            reports=reports,
         )
 
     except Exception as e:
-        logger.error(f"Error rendering Warehouse dashboard: {str(e)}")
+        logger.error("Error rendering Warehouse dashboard: %s", str(e))
         return render_template("error.html", error=str(e))
