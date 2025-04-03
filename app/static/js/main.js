@@ -215,61 +215,174 @@ class DarkModeManager {
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
         const textColor = isDark ? '#cbd5e1' : '#5c5f73';
 
-        // Set default options for Chart.js
-        if (Chart.defaults) {
-            // Update global defaults if available
-            if (Chart.defaults.color !== undefined) {
-                Chart.defaults.color = textColor;
-            }
+        try {
+            // FIX: Instead of modifying global Chart defaults (which can cause recursion),
+            // only set them when initializing new charts.
+            // Just update existing chart instances directly
 
-            // Update scale defaults if available
-            if (Chart.defaults.scale && Chart.defaults.scale.grid) {
-                Chart.defaults.scale.grid.color = gridColor;
-            }
+            // Get all chart instances safely
+            const chartInstances = this.getAllChartInstances();
+
+            // Update each chart
+            chartInstances.forEach(chart => {
+                // Try-catch around each chart update to prevent errors from stopping other updates
+                try {
+                    this.updateChartInstance(chart, textColor, gridColor);
+                } catch (err) {
+                    console.warn('Error updating individual chart:', err);
+                }
+            });
+        } catch (error) {
+            console.warn('Error updating chart theme:', error);
         }
+    }
 
-        // Get all chart instances safely
-        // In Chart.js v3+, Chart.instances is a Map, not an array
+    /**
+     * Get all Chart.js instances safely across different versions
+     * @returns {Array} Array of Chart instances
+     */
+    getAllChartInstances() {
+        if (typeof Chart === 'undefined') return [];
+
         try {
             // For Chart.js v3+
             if (Chart.instances) {
-                // Convert Map to Array if needed
-                const chartInstances = Chart.instances instanceof Map ?
-                    Array.from(Chart.instances.values()) :
-                    Object.values(Chart.instances);
+                // If it's a Map (Chart.js v3+)
+                if (Chart.instances instanceof Map) {
+                    return Array.from(Chart.instances.values());
+                }
+                // If it's an object (some versions)
+                else if (typeof Chart.instances === 'object') {
+                    return Object.values(Chart.instances);
+                }
+            }
 
-                chartInstances.forEach(chart => {
-                    if (chart && chart.options) {
-                        // Update chart options
-                        if (chart.options.plugins && chart.options.plugins.legend) {
-                            chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
-                            chart.options.plugins.legend.labels.color = textColor;
+            // For Chart.js v2.x
+            if (Chart.instances && Array.isArray(Chart.instances)) {
+                return Chart.instances;
+            }
+
+            // Fallback for Chart.js v4
+            if (typeof Chart.getChart === 'function') {
+                const canvases = document.querySelectorAll('canvas');
+                const charts = [];
+
+                canvases.forEach(canvas => {
+                    try {
+                        const chart = Chart.getChart(canvas);
+                        if (chart) {
+                            charts.push(chart);
                         }
+                    } catch (e) {
+                        // Ignore errors for canvases without charts
+                    }
+                });
 
-                        // Update scales if they exist
-                        if (chart.options.scales) {
-                            if (chart.options.scales.x) {
-                                chart.options.scales.x.ticks = chart.options.scales.x.ticks || {};
-                                chart.options.scales.x.grid = chart.options.scales.x.grid || {};
-                                chart.options.scales.x.ticks.color = textColor;
-                                chart.options.scales.x.grid.color = gridColor;
-                            }
+                return charts;
+            }
 
-                            if (chart.options.scales.y) {
-                                chart.options.scales.y.ticks = chart.options.scales.y.ticks || {};
-                                chart.options.scales.y.grid = chart.options.scales.y.grid || {};
-                                chart.options.scales.y.ticks.color = textColor;
-                                chart.options.scales.y.grid.color = gridColor;
-                            }
-                        }
+            // No instances found or unsupported version
+            return [];
+        } catch (error) {
+            console.warn('Error getting Chart instances:', error);
+            return [];
+        }
+    }
 
-                        // Update the chart
-                        chart.update();
+    /**
+     * Update a single chart instance with new theme options
+     * @param {Chart} chart - The Chart.js instance to update
+     * @param {string} textColor - The text color to use
+     * @param {string} gridColor - The grid color to use
+     */
+    updateChartInstance(chart, textColor, gridColor) {
+        if (!chart || !chart.options) return;
+
+        // Use a deep copy approach to avoid potential recursion issues
+        const newOptions = JSON.parse(JSON.stringify(chart.options));
+        let needsUpdate = false;
+
+        // Safely update options
+        if (newOptions.plugins) {
+            // Update legend text color
+            if (newOptions.plugins.legend && newOptions.plugins.legend.labels) {
+                newOptions.plugins.legend.labels.color = textColor;
+                needsUpdate = true;
+            }
+
+            // Update title color
+            if (newOptions.plugins.title) {
+                newOptions.plugins.title.color = textColor;
+                needsUpdate = true;
+            }
+        }
+
+        // Update scales for Chart.js v3+
+        if (newOptions.scales) {
+            if (newOptions.scales.x) {
+                if (newOptions.scales.x.ticks) {
+                    newOptions.scales.x.ticks.color = textColor;
+                    needsUpdate = true;
+                }
+                if (newOptions.scales.x.grid) {
+                    newOptions.scales.x.grid.color = gridColor;
+                    needsUpdate = true;
+                }
+                if (newOptions.scales.x.title) {
+                    newOptions.scales.x.title.color = textColor;
+                    needsUpdate = true;
+                }
+            }
+
+            if (newOptions.scales.y) {
+                if (newOptions.scales.y.ticks) {
+                    newOptions.scales.y.ticks.color = textColor;
+                    needsUpdate = true;
+                }
+                if (newOptions.scales.y.grid) {
+                    newOptions.scales.y.grid.color = gridColor;
+                    needsUpdate = true;
+                }
+                if (newOptions.scales.y.title) {
+                    newOptions.scales.y.title.color = textColor;
+                    needsUpdate = true;
+                }
+            }
+
+            // Update scales for Chart.js v2.x
+            if (Array.isArray(newOptions.scales.xAxes)) {
+                newOptions.scales.xAxes.forEach(axis => {
+                    if (axis.ticks) {
+                        axis.ticks.fontColor = textColor;
+                        needsUpdate = true;
+                    }
+                    if (axis.gridLines) {
+                        axis.gridLines.color = gridColor;
+                        needsUpdate = true;
                     }
                 });
             }
-        } catch (error) {
-            console.warn('Error updating chart theme:', error);
+
+            if (Array.isArray(newOptions.scales.yAxes)) {
+                newOptions.scales.yAxes.forEach(axis => {
+                    if (axis.ticks) {
+                        axis.ticks.fontColor = textColor;
+                        needsUpdate = true;
+                    }
+                    if (axis.gridLines) {
+                        axis.gridLines.color = gridColor;
+                        needsUpdate = true;
+                    }
+                });
+            }
+        }
+
+        // Only update the chart if needed and avoid modifying chart.options directly
+        if (needsUpdate && typeof chart.update === 'function') {
+            // Use options override instead of modifying the chart directly
+            chart.update({
+                options: newOptions
+            });
         }
     }
 }

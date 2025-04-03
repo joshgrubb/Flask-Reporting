@@ -3,7 +3,7 @@
  * 
  * This script helps manage Chart.js themes for dark/light mode.
  * It centralizes color management for charts across the application.
- * Compatible with Chart.js v2.x and v3.x
+ * Compatible with Chart.js v2.x, v3.x, and v4.x
  */
 
 class ChartThemeHelper {
@@ -124,6 +124,27 @@ class ChartThemeHelper {
         if (typeof Chart === 'undefined') return [];
 
         try {
+            const charts = [];
+
+            // For Chart.js v4.x
+            if (typeof Chart.getChart === 'function') {
+                const canvases = document.querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                    try {
+                        const chart = Chart.getChart(canvas);
+                        if (chart) {
+                            charts.push(chart);
+                        }
+                    } catch (e) {
+                        // Skip canvases without charts
+                    }
+                });
+
+                if (charts.length > 0) {
+                    return charts;
+                }
+            }
+
             // For Chart.js v3+
             if (Chart.instances) {
                 // If it's a Map (Chart.js v3+)
@@ -155,64 +176,17 @@ class ChartThemeHelper {
     updateAllCharts() {
         if (typeof Chart === 'undefined') return;
 
-        // Set default Chart.js options
-        this.setChartDefaults();
-
         // Get all chart instances
         const chartInstances = this.getAllChartInstances();
 
         // Update each chart
         chartInstances.forEach(chart => {
-            this.updateChartTheme(chart);
+            try {
+                this.updateChartTheme(chart);
+            } catch (error) {
+                console.warn('Error updating individual chart:', error);
+            }
         });
-    }
-
-    /**
-     * Set default options for Chart.js
-     */
-    setChartDefaults() {
-        if (typeof Chart === 'undefined') return;
-
-        try {
-            // Handle different Chart.js versions
-            if (Chart.defaults) {
-                // Chart.js v3.x
-                if (Chart.defaults.color !== undefined) {
-                    Chart.defaults.color = this.activePalette.text;
-                }
-
-                if (Chart.defaults.scale && Chart.defaults.scale.grid) {
-                    Chart.defaults.scale.grid.color = this.activePalette.gridLines;
-                }
-
-                if (Chart.defaults.scale && Chart.defaults.scale.ticks) {
-                    Chart.defaults.scale.ticks.color = this.activePalette.text;
-                }
-
-                if (Chart.defaults.plugins && Chart.defaults.plugins.legend) {
-                    Chart.defaults.plugins.legend.labels = Chart.defaults.plugins.legend.labels || {};
-                    Chart.defaults.plugins.legend.labels.color = this.activePalette.text;
-                }
-
-                if (Chart.defaults.plugins && Chart.defaults.plugins.title) {
-                    Chart.defaults.plugins.title.color = this.activePalette.text;
-                }
-            }
-            // Chart.js v2.x
-            else if (Chart.defaults && Chart.defaults.global) {
-                Chart.defaults.global.defaultFontColor = this.activePalette.text;
-
-                if (Chart.defaults.global.elements && Chart.defaults.global.elements.line) {
-                    Chart.defaults.global.elements.line.borderColor = this.activePalette.primary;
-                }
-
-                if (Chart.defaults.scale && Chart.defaults.scale.gridLines) {
-                    Chart.defaults.scale.gridLines.color = this.activePalette.gridLines;
-                }
-            }
-        } catch (error) {
-            console.warn('Error setting Chart defaults:', error);
-        }
     }
 
     /**
@@ -223,97 +197,118 @@ class ChartThemeHelper {
         if (!chart || !chart.options) return;
 
         try {
-            // Chart.js v3.x structure
-            if (chart.options.plugins) {
+            // FIX: Create a new options object instead of modifying existing one to avoid recursive updates
+            const newOptions = JSON.parse(JSON.stringify(chart.options));
+            let needsUpdate = false;
+
+            // Chart.js v3.x/v4.x structure
+            if (newOptions.plugins) {
                 // Update legend text color
-                if (chart.options.plugins.legend) {
-                    if (!chart.options.plugins.legend.labels) {
-                        chart.options.plugins.legend.labels = {};
-                    }
-                    chart.options.plugins.legend.labels.color = this.activePalette.text;
+                if (newOptions.plugins.legend && newOptions.plugins.legend.labels) {
+                    newOptions.plugins.legend.labels.color = this.activePalette.text;
+                    needsUpdate = true;
                 }
 
                 // Update title color
-                if (chart.options.plugins.title) {
-                    chart.options.plugins.title.color = this.activePalette.text;
+                if (newOptions.plugins.title) {
+                    newOptions.plugins.title.color = this.activePalette.text;
+                    needsUpdate = true;
                 }
             }
 
             // Chart.js v2.x structure
-            if (chart.options.legend) {
-                if (!chart.options.legend.labels) {
-                    chart.options.legend.labels = {};
-                }
-                chart.options.legend.labels.fontColor = this.activePalette.text;
+            if (newOptions.legend && newOptions.legend.labels) {
+                newOptions.legend.labels.fontColor = this.activePalette.text;
+                needsUpdate = true;
             }
 
-            if (chart.options.title) {
-                chart.options.title.fontColor = this.activePalette.text;
+            if (newOptions.title) {
+                newOptions.title.fontColor = this.activePalette.text;
+                needsUpdate = true;
             }
 
-            // Update scales (works for both v2.x and v3.x with different structures)
-            if (chart.options.scales) {
-                // v3.x structure
-                if (chart.options.scales.x) {
-                    if (!chart.options.scales.x.ticks) chart.options.scales.x.ticks = {};
-                    if (!chart.options.scales.x.grid) chart.options.scales.x.grid = {};
-
-                    chart.options.scales.x.ticks.color = this.activePalette.text;
-                    chart.options.scales.x.grid.color = this.activePalette.gridLines;
-
-                    if (chart.options.scales.x.title) {
-                        chart.options.scales.x.title.color = this.activePalette.text;
+            // Update scales (works for both v2.x and v3.x/v4.x with different structures)
+            if (newOptions.scales) {
+                // v3.x/v4.x structure
+                if (newOptions.scales.x) {
+                    if (newOptions.scales.x.ticks) {
+                        newOptions.scales.x.ticks.color = this.activePalette.text;
+                        needsUpdate = true;
+                    }
+                    if (newOptions.scales.x.grid) {
+                        newOptions.scales.x.grid.color = this.activePalette.gridLines;
+                        needsUpdate = true;
+                    }
+                    if (newOptions.scales.x.title) {
+                        newOptions.scales.x.title.color = this.activePalette.text;
+                        needsUpdate = true;
                     }
                 }
 
-                if (chart.options.scales.y) {
-                    if (!chart.options.scales.y.ticks) chart.options.scales.y.ticks = {};
-                    if (!chart.options.scales.y.grid) chart.options.scales.y.grid = {};
-
-                    chart.options.scales.y.ticks.color = this.activePalette.text;
-                    chart.options.scales.y.grid.color = this.activePalette.gridLines;
-
-                    if (chart.options.scales.y.title) {
-                        chart.options.scales.y.title.color = this.activePalette.text;
+                if (newOptions.scales.y) {
+                    if (newOptions.scales.y.ticks) {
+                        newOptions.scales.y.ticks.color = this.activePalette.text;
+                        needsUpdate = true;
+                    }
+                    if (newOptions.scales.y.grid) {
+                        newOptions.scales.y.grid.color = this.activePalette.gridLines;
+                        needsUpdate = true;
+                    }
+                    if (newOptions.scales.y.title) {
+                        newOptions.scales.y.title.color = this.activePalette.text;
+                        needsUpdate = true;
                     }
                 }
 
                 // v2.x structure
-                if (chart.options.scales.xAxes && Array.isArray(chart.options.scales.xAxes)) {
-                    chart.options.scales.xAxes.forEach(axis => {
-                        if (!axis.ticks) axis.ticks = {};
-                        if (!axis.gridLines) axis.gridLines = {};
-
-                        axis.ticks.fontColor = this.activePalette.text;
-                        axis.gridLines.color = this.activePalette.gridLines;
+                if (Array.isArray(newOptions.scales.xAxes)) {
+                    newOptions.scales.xAxes.forEach(axis => {
+                        if (axis.ticks) {
+                            axis.ticks.fontColor = this.activePalette.text;
+                            needsUpdate = true;
+                        }
+                        if (axis.gridLines) {
+                            axis.gridLines.color = this.activePalette.gridLines;
+                            needsUpdate = true;
+                        }
                     });
                 }
 
-                if (chart.options.scales.yAxes && Array.isArray(chart.options.scales.yAxes)) {
-                    chart.options.scales.yAxes.forEach(axis => {
-                        if (!axis.ticks) axis.ticks = {};
-                        if (!axis.gridLines) axis.gridLines = {};
-
-                        axis.ticks.fontColor = this.activePalette.text;
-                        axis.gridLines.color = this.activePalette.gridLines;
+                if (Array.isArray(newOptions.scales.yAxes)) {
+                    newOptions.scales.yAxes.forEach(axis => {
+                        if (axis.ticks) {
+                            axis.ticks.fontColor = this.activePalette.text;
+                            needsUpdate = true;
+                        }
+                        if (axis.gridLines) {
+                            axis.gridLines.color = this.activePalette.gridLines;
+                            needsUpdate = true;
+                        }
                     });
                 }
             }
 
             // For pie/doughnut charts, update background colors if needed
-            if (chart.config && (chart.config.type === 'pie' || chart.config.type === 'doughnut')) {
-                if (chart.data && chart.data.datasets && chart.data.datasets[0]) {
-                    // Only update if colors weren't explicitly defined by user
-                    if (!chart.data._userDefinedColors) {
-                        chart.data.datasets[0].backgroundColor = this.activePalette.datasets;
-                        chart.data.datasets[0].borderColor = this.activePalette.borderColors;
-                    }
+            if (chart.config && chart.data && chart.data.datasets &&
+                (chart.config.type === 'pie' || chart.config.type === 'doughnut')) {
+                // Only update if colors weren't explicitly defined by user
+                if (!chart.data._userDefinedColors) {
+                    // Create a new copy of the datasets to avoid direct modification
+                    const newDatasets = JSON.parse(JSON.stringify(chart.data.datasets));
+                    newDatasets[0].backgroundColor = this.activePalette.datasets;
+                    newDatasets[0].borderColor = this.activePalette.borderColors;
+
+                    // Set datasets directly during the update instead of modifying them
+                    needsUpdate = true;
                 }
             }
 
-            // Update the chart
-            if (typeof chart.update === 'function') {
-                chart.update();
+            // Update the chart with new options only if changes were made
+            if (needsUpdate && typeof chart.update === 'function') {
+                // Use update with entirely new configuration to avoid recursion
+                chart.update({
+                    options: newOptions
+                });
             }
         } catch (error) {
             console.warn('Error updating chart theme:', error);
@@ -351,7 +346,7 @@ class ChartThemeHelper {
         // Detect Chart.js version
         const isV3 = typeof Chart !== 'undefined' && Chart.defaults && Chart.defaults.color !== undefined;
 
-        // Base options structure for v3
+        // Base options structure for v3/v4
         if (isV3) {
             const baseOptions = {
                 responsive: true,
@@ -381,7 +376,7 @@ class ChartThemeHelper {
                 }
             };
 
-            // Add type-specific options for v3
+            // Add type-specific options for v3/v4
             switch (type) {
                 case 'bar':
                 case 'line':
@@ -397,10 +392,6 @@ class ChartThemeHelper {
                                     font: {
                                         family: "'Roboto', sans-serif"
                                     }
-                                },
-                                title: {
-                                    display: false,
-                                    color: this.activePalette.text
                                 }
                             },
                             y: {
