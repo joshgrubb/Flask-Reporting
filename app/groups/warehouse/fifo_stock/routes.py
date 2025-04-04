@@ -16,6 +16,7 @@ from app.groups.warehouse.fifo_stock.queries import (
     get_inventory_by_category,
     get_inventory_categories,
     get_inventory_summary_by_category,
+    get_inventory_cost_trends,
 )
 
 # Configure logger
@@ -33,7 +34,7 @@ def index():
     try:
         return render_template(
             "groups/warehouse/fifo_stock/index.html",
-            title="Inventory By Category Report",
+            title="Inventory Cost Trends Report",
         )
 
     except Exception as e:
@@ -76,8 +77,17 @@ def get_report_data():
         Response: JSON response with report data.
     """
     try:
-        # Get category filter from request
+        # Get category filter and threshold from request
         category = request.args.get("category", "")
+        threshold_str = request.args.get("threshold", "50")
+
+        # Parse threshold, with default of 50 if invalid
+        try:
+            threshold = int(threshold_str)
+            if threshold < 1:
+                threshold = 50
+        except ValueError:
+            threshold = 50
 
         if not category:
             return jsonify({"success": False, "error": "Please select a category"}), 400
@@ -100,6 +110,71 @@ def get_report_data():
 
     except Exception as e:
         logger.error("Error fetching inventory data: %s", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route("/cost-trends")
+def get_cost_trends_data():
+    """
+    Get cost trend data as JSON for AJAX requests.
+
+    Returns:
+        Response: JSON response with cost trend data.
+    """
+    try:
+        # Get category filter and threshold from request
+        category = request.args.get("category", "")
+        threshold_str = request.args.get("threshold", "50")
+
+        # Parse threshold, with default of 50 if invalid
+        try:
+            significant_threshold = int(threshold_str)
+            if significant_threshold < 1:
+                significant_threshold = 50
+        except ValueError:
+            significant_threshold = 50
+
+        if not category:
+            return jsonify({"success": False, "error": "Please select a category"}), 400
+
+        # Get query and parameters
+        query, params, db_key = get_inventory_cost_trends(category)
+
+        # Execute query
+        results = execute_query(query, params, db_key=db_key)
+
+        # Process data to calculate significant cost increases (potential input errors)
+        # using user-defined threshold
+
+        # Group by material to detect patterns
+        material_data = {}
+        for row in results:
+            material_id = row["MATERIALUID"]
+            if material_id not in material_data:
+                material_data[material_id] = []
+
+            # Determine if this is a significant increase
+            if row["PercentChange"] > significant_threshold:
+                row["IsSignificantIncrease"] = True
+            else:
+                row["IsSignificantIncrease"] = False
+
+            material_data[material_id].append(row)
+
+        # Return data as JSON with both grouped and raw results
+        return jsonify(
+            {
+                "success": True,
+                "data": results,
+                "materialData": material_data,
+                "count": len(results),
+                "category": category,
+                "significantThreshold": significant_threshold,
+            }
+        )
+
+    except Exception as e:
+        logger.error("Error fetching cost trend data: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -158,7 +233,9 @@ def export_report():
     try:
         # Get category filter and export type from request
         category = request.args.get("category", "")
-        export_type = request.args.get("type", "detail")  # 'detail' or 'summary'
+        export_type = request.args.get(
+            "type", "detail"
+        )  # 'detail', 'summary' or 'trends'
 
         if not category:
             return jsonify({"success": False, "error": "Please select a category"}), 400
@@ -166,6 +243,8 @@ def export_report():
         # Get query and parameters based on export type
         if export_type == "summary":
             query, params, db_key = get_inventory_summary_by_category(category)
+        elif export_type == "trends":
+            query, params, db_key = get_inventory_cost_trends(category)
         else:
             query, params, db_key = get_inventory_by_category(category)
 

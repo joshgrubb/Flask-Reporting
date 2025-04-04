@@ -13,11 +13,11 @@
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
                 <li class="breadcrumb-item"><a href="/groups/warehouse/">Warehouse</a></li>
-                <li class="breadcrumb-item active">Inventory By Category</li>
+                <li class="breadcrumb-item active">Inventory Cost Trends</li>
             </ol>
         </nav>
-        <h1><i class="fas fa-boxes"></i> {{ title }}</h1>
-        <p class="lead">View inventory items filtered by category.</p>
+        <h1><i class="fas fa-chart-line"></i> {{ title }}</h1>
+        <p class="lead">View how unit costs have changed over time for inventory items.</p>
     </div>
 </div>
 
@@ -27,14 +27,26 @@
         <div class="filters">
             <form id="reportFilters">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-6">
-                        <label for="categorySelect" class="form-label">Select FIFO Stock Cost</label>
+                    <div class="col-md-5">
+                        <label for="categorySelect" class="form-label">Select Category</label>
                         <select class="form-select" id="categorySelect" name="category">
                             <option value="">Select a category...</option>
                             <!-- Categories will be loaded dynamically -->
                         </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
+                        <label for="thresholdInput" class="form-label">Significant Cost Increase (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="thresholdInput" name="threshold" value="50"
+                                min="1" max="1000" step="1">
+                            <span class="input-group-text">%</span>
+                            <button type="button" class="btn btn-outline-secondary" id="resetThreshold"
+                                title="Reset to default">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <button type="button" id="applyFilters" class="btn btn-primary">
                             <i class="fas fa-filter"></i> Apply Filter
                         </button>
@@ -46,6 +58,7 @@
                             <ul class="dropdown-menu" aria-labelledby="exportDropdown">
                                 <li><a class="dropdown-item" href="#" id="exportDetail">Detailed Export</a></li>
                                 <li><a class="dropdown-item" href="#" id="exportSummary">Summary Export</a></li>
+                                <li><a class="dropdown-item" href="#" id="exportTrends">Cost Trends Export</a></li>
                             </ul>
                         </div>
                     </div>
@@ -60,7 +73,7 @@
     <div class="col">
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>
-            Please select a category from the dropdown and click "Apply Filter" to view inventory data.
+            Please select a category from the dropdown and click "Apply Filter" to view inventory cost trend data.
         </div>
     </div>
 </div>
@@ -102,58 +115,60 @@
     </div>
 </div>
 
-<!-- Charts Section (Initially Hidden) -->
-<div id="chartsSection" class="row mb-4" style="display: none;">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Value Distribution</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="valueDistributionChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Quantity Distribution</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="quantityDistributionChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Detailed Data Table (Initially Hidden) -->
-<div id="detailedDataSection" class="row" style="display: none;">
+<!-- Cost Trend Data Table (Initially Hidden) -->
+<div id="costTrendSection" class="row" style="display: none;">
     <div class="col">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Detailed Inventory Items</h5>
+                <h5 class="mb-0">Unit Cost Trends Over Time</h5>
             </div>
             <div class="card-body">
-                <div id="dataTableContainer" class="loading">
-                    <table id="inventoryTable" class="table table-striped table-bordered" style="width:100%">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> Rows highlighted in red indicate a significant increase in unit cost (above
+                    the threshold), which might indicate a potential error where total cost was entered instead of unit
+                    cost. You can adjust the threshold using the filter above.
+                </div>
+                <div id="costTrendTableContainer" class="loading">
+                    <table id="costTrendTable" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
                                 <th>Material ID</th>
                                 <th>Description</th>
+                                <th>Purchase Date</th>
                                 <th>Quantity</th>
                                 <th>Unit Cost</th>
-                                <th>Value</th>
-                                <th>Purchase Date</th>
+                                <th>Previous Cost</th>
+                                <th>% Change</th>
                             </tr>
                         </thead>
                         <tbody>
                             <!-- Data will be loaded here -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Material Line Charts Section (Initially Hidden) -->
+<div id="materialChartsSection" class="row mt-4" style="display: none;">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Cost Trend Charts</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="materialSelect" class="form-label">Select Material to View Cost Trend</label>
+                    <select class="form-select" id="materialSelect">
+                        <option value="">Select a material...</option>
+                        <!-- Materials will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="costTrendChart"></canvas>
                 </div>
             </div>
         </div>
@@ -175,10 +190,12 @@
                                 <th>Material ID</th>
                                 <th>Description</th>
                                 <th>Total Quantity</th>
-                                <th>Avg. Unit Cost</th>
+                                <th>Avg Unit Cost</th>
+                                <th>Min Cost</th>
+                                <th>Max Cost</th>
+                                <th>% Increase</th>
                                 <th>Total Value</th>
-                                <th>Oldest Purchase</th>
-                                <th>Newest Purchase</th>
+                                <th>Date Range</th>
                             </tr>
                         </thead>
                         <tbody>
