@@ -31,6 +31,13 @@ def index():
                 "url": "/groups/warehouse/fifo_cost_wo/",
                 "icon": "fas fa-clipboard-list",
             },
+            {
+                "id": "fifo_stock",
+                "name": "FIFO Stock Cost",
+                "description": "View inventory items filtered by category with value and quantity analysis",
+                "url": "/groups/warehouse/fifo_stock/",
+                "icon": "fas fa-boxes",
+            },
             # Add more reports as they are implemented
         ]
 

@@ -21,6 +21,8 @@ from app.groups.warehouse import routes  # noqa
 # Import the report blueprints after the main blueprint has been created
 # to avoid circular imports
 from app.groups.warehouse.fifo_cost_wo import bp as fifo_cost_wo_bp  # noqa
+from app.groups.warehouse.fifo_stock import bp as fifo_stock_bp  # noqa
 
 # Register the report blueprints
 bp.register_blueprint(fifo_cost_wo_bp)
+bp.register_blueprint(fifo_stock_bp)
