@@ -251,7 +251,7 @@ function initCostTrendTable(data, significantThreshold) {
             {
                 data: 'PercentChange',
                 render: function (data) {
-                    if (data === 0 || !data) return 'N/A';
+                    if (data === null || data === undefined || data === 0) return 'N/A';
 
                     const formattedValue = parseFloat(data).toFixed(2) + '%';
 
@@ -266,7 +266,7 @@ function initCostTrendTable(data, significantThreshold) {
 
                     return formattedValue;
                 }
-            },
+            }
         ],
         pageLength: 25,
         order: [[0, 'asc'], [2, 'asc']], // Sort by Material ID, then Purchase Date
@@ -289,9 +289,9 @@ function initCostTrendTable(data, significantThreshold) {
     const table = $('#costTrendTable').DataTable(dataTableOptions);
 
     // Add a filter by Material ID
-    new $.fn.dataTable.SearchPanes(table, {});
-    table.searchPanes.container().prependTo('#costTrendTableContainer');
-    table.searchPanes.resizePanes();
+    // new $.fn.dataTable.SearchPanes(table, {});
+    // table.searchPanes.container().prependTo('#costTrendTableContainer');
+    // table.searchPanes.resizePanes();
 
     // Window resize handler
     $(window).on('resize', function () {

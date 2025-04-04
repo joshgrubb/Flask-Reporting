@@ -154,7 +154,11 @@ def get_cost_trends_data():
                 material_data[material_id] = []
 
             # Determine if this is a significant increase
-            if row["PercentChange"] > significant_threshold:
+            # FIX: Check if PercentChange is None before comparison
+            if (
+                row["PercentChange"] is not None
+                and row["PercentChange"] > significant_threshold
+            ):
                 row["IsSignificantIncrease"] = True
             else:
                 row["IsSignificantIncrease"] = False
