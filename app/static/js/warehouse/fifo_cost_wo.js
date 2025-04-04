@@ -1,7 +1,7 @@
 /**
- * FIFO Work Order Cost Report JavaScript
+ * FIFO Cost by Account Number Report JavaScript
  * 
- * This file handles the interactive functionality for the FIFO Work Order Cost report,
+ * This file handles the interactive functionality for the FIFO Cost by Account report,
  * including loading data, initializing tables, charts and handling user interactions.
  */
 
@@ -15,11 +15,11 @@ $(document).ready(function () {
     }
 
     // Initial data load
-    loadWorkOrderData();
+    loadAccountData();
 
     // Event handlers
     $('#applyFilters').click(function () {
-        loadWorkOrderData();
+        loadAccountData();
     });
 
     $('#resetFilters').click(function () {
@@ -44,211 +44,201 @@ $(document).ready(function () {
         $('#endDate').val(formattedEndDate);
 
         // Load data with reset filters
-        loadWorkOrderData();
+        loadAccountData();
     });
 
-    $('#exportData').click(function () {
-        exportReportData();
+    // Handle the export dropdown options
+    $('#exportDetail').click(function () {
+        exportReportData('detail');
     });
-});
 
-/**
- * Load work order data based on filters
- */
-function loadWorkOrderData() {
-    const startDate = $('#startDate').val();
-    const endDate = $('#endDate').val();
+    $('#exportSummary').click(function () {
+        exportReportData('summary');
+    });
 
-    // Show loading indicators
-    $('#dataTableContainer').addClass('loading');
-    $('#totalWorkOrders, #totalCost, #averageCost').text('-');
-    $('#dateRangeInfo').text('Loading...');
+    /**
+     * Load account data based on filters
+     */
+    function loadAccountData() {
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
 
-    // Load main data
-    $.ajax({
-        url: '/groups/warehouse/fifo_cost_wo/data',
-        data: {
-            start_date: startDate,
-            end_date: endDate
-        },
-        dataType: 'json',
-        success: function (response) {
-            if (response.success) {
-                initDataTable(response.data);
-                updateStats(response.data);
-            } else {
-                showError('Error loading data: ' + response.error);
+        // Show loading indicators
+        $('#dataTableContainer').addClass('loading');
+        $('#totalAccounts, #totalCost, #missingAccountsCost').text('-');
+        $('#dateRangeInfo').text('Loading...');
+
+        // Load main data
+        $.ajax({
+            url: '/groups/warehouse/fifo_cost_wo/data',
+            data: {
+                start_date: startDate,
+                end_date: endDate
+            },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    initDataTable(response.data);
+                    updateStats(response.data);
+                } else {
+                    showError('Error loading data: ' + response.error);
+                }
+            },
+            error: function (xhr, status, error) {
+                showError('Error loading data: ' + error);
+            },
+            complete: function () {
+                $('#dataTableContainer').removeClass('loading');
             }
-        },
-        error: function (xhr, status, error) {
-            showError('Error loading data: ' + error);
-        },
-        complete: function () {
-            $('#dataTableContainer').removeClass('loading');
-        }
-    });
+        });
 
-    // Load summary data
-    $.ajax({
-        url: '/groups/warehouse/fifo_cost_wo/summary',
-        data: {
-            start_date: startDate,
-            end_date: endDate
-        },
-        dataType: 'json',
-        success: function (response) {
-            if (response.success) {
-                // Additional summary visualizations could be added here
-                console.log('Summary data:', response.data);
-            } else {
-                showError('Error loading summary data: ' + response.error);
+        // Load summary data
+        $.ajax({
+            url: '/groups/warehouse/fifo_cost_wo/summary',
+            data: {
+                start_date: startDate,
+                end_date: endDate
+            },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    // Additional summary visualizations could be added here
+                    console.log('Summary data:', response.data);
+                } else {
+                    showError('Error loading summary data: ' + response.error);
+                }
+            },
+            error: function (xhr, status, error) {
+                showError('Error loading summary data: ' + error);
             }
-        },
-        error: function (xhr, status, error) {
-            showError('Error loading summary data: ' + error);
-        }
-    });
-}
-
-/**
- * Initialize DataTable with work order data
- * @param {Array} data - The work order data to display
- */
-function initDataTable(data) {
-    // Check if DataTables is available
-    if (typeof $.fn.DataTable !== 'function') {
-        console.error('DataTables is not loaded properly');
-        showError('DataTables library failed to load. Please check console for details.');
-        return;
+        });
     }
 
-    // Destroy existing DataTable if it exists
-    if ($.fn.DataTable.isDataTable('#workOrdersTable')) {
-        $('#workOrdersTable').DataTable().destroy();
-    }
+    /**
+     * Initialize DataTable with account data
+     * @param {Array} data - The account data to display
+     */
+    function initDataTable(data) {
+        // Check if DataTables is available
+        if (typeof $.fn.DataTable !== 'function') {
+            console.error('DataTables is not loaded properly');
+            showError('DataTables library failed to load. Please check console for details.');
+            return;
+        }
 
-    // Create options object for DataTable
-    const dataTableOptions = {
-        data: data,
-        columns: [
-            { data: 'WORKORDERID' },
-            {
-                data: 'TRANSDATE',
-                render: function (data) {
-                    return formatDate(data);
-                }
-            },
-            { data: 'WOCATEGORY' },
-            {
-                data: null,
-                render: function (data) {
-                    // Create a description from the first item
-                    if (data.ITEMS && data.ITEMS.length > 0) {
-                        return data.ITEMS[0].DESCRIPTION || 'N/A';
+        // Destroy existing DataTable if it exists
+        if ($.fn.DataTable.isDataTable('#accountsTable')) {
+            $('#accountsTable').DataTable().destroy();
+        }
+
+        // Remove any existing event listeners to prevent duplicates
+        $('#accountsTable tbody').off('click', 'button.view-details');
+
+        // Create options object for DataTable
+        const dataTableOptions = {
+            data: data,
+            columns: [
+                {
+                    data: 'ACCTNUM',
+                    render: function (data, type, row) {
+                        if (row.IS_MISSING) {
+                            return '<span class="badge bg-danger">MISSING</span>';
+                        }
+                        return data;
                     }
-                    return 'N/A';
-                }
-            },
-            {
-                data: null,
-                render: function (data) {
-                    // Show count of items
-                    if (data.ITEMS) {
-                        return `${data.ITEMS.length} item(s)`;
+                },
+                { data: 'ITEM_COUNT' },
+                { data: 'WORK_ORDER_COUNT' },
+                {
+                    data: 'TOTAL_COST',
+                    render: function (data) {
+                        return formatCurrency(data);
                     }
-                    return '0 items';
-                }
-            },
-            {
-                data: null,
-                render: function (data) {
-                    // Show account status
-                    if (data.MISSING_ACCT) {
-                        return '<span class="badge bg-danger">Missing Accounts</span>';
-                    } else {
-                        return '<span class="badge bg-success">Complete</span>';
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: function () {
+                        return '<button class="btn btn-sm btn-primary view-details">View Details</button>';
                     }
                 }
+            ],
+            pageLength: 25,
+            order: [[0, 'desc']], // Sort by account number, with missing at top due to sorting in backend
+            language: {
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
             },
-            {
-                data: 'TOTAL_COST',
-                render: function (data) {
-                    return formatCurrency(data);
+            // Row styling
+            createdRow: function (row, data) {
+                if (data.IS_MISSING) {
+                    $(row).addClass('table-danger');
                 }
             }
-        ],
-        pageLength: 10,
-        order: [[5, 'desc']], // Sort by date, newest first
-        language: {
-            search: "Search:",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            infoEmpty: "Showing 0 to 0 of 0 entries",
-            infoFiltered: "(filtered from _MAX_ total entries)"
-        },
-        // Add row expansion callback to show item details
-        rowCallback: function (row, data) {
-            $(row).on('click', function () {
-                // Create and show a detailed view of items
-                showWorkOrderDetails(data);
-            });
-            $(row).css('cursor', 'pointer');
-        }
-    };
+        };
 
-    // Initialize DataTable
-    const table = $('#workOrdersTable').DataTable(dataTableOptions);
+        // Initialize DataTable
+        const table = $('#accountsTable').DataTable(dataTableOptions);
 
-    // Handle window resize
-    $(window).on('resize', function () {
-        if (table && typeof table.columns === 'function') {
-            table.columns.adjust();
-        }
-    });
-}
+        // Add event listener for the view details button AFTER the table is initialized
+        $('#accountsTable tbody').on('click', 'button.view-details', function () {
+            const data = table.row($(this).parents('tr')).data();
+            showAccountDetails(data);
+        });
 
-/**
- * Show work order details in a modal
- * @param {Object} workOrder - The work order data
- */
-function showWorkOrderDetails(workOrder) {
-    // Check if modal already exists, if not create it
-    let modalElement = $('#workOrderDetailsModal');
-    if (modalElement.length === 0) {
+        // Handle window resize
+        $(window).on('resize', function () {
+            if (table && typeof table.columns === 'function') {
+                table.columns.adjust();
+            }
+        });
+    }
+
+    /**
+     * Show account details in a modal
+     * @param {Object} account - The account data
+     */
+    function showAccountDetails(account) {
+        // Remove any existing modal to prevent duplication issues
+        $('#accountDetailsModal').remove();
+
         // Create modal HTML
         const modalHTML = `
-        <div class="modal fade" id="workOrderDetailsModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Work Order Details</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal fade" id="accountDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        GL Account Details: <span id="detail-account-id"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Items:</strong> <span id="detail-item-count"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Work Orders:</strong> <span id="detail-wo-count"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Total Cost:</strong> <span id="detail-total-cost"></span>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <strong>Work Order ID:</strong> <span id="detail-workorder-id"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Date:</strong> <span id="detail-date"></span>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <strong>Category:</strong> <span id="detail-category"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Total Cost:</strong> <span id="detail-total-cost"></span>
-                            </div>
-                        </div>
-                        <h6>Items</h6>
+                    <h6>Items in this Account</h6>
+                    <div class="table-responsive">
                         <table class="table table-striped">
                             <thead>
                                 <tr>
+                                    <th>Work Order ID</th>
+                                    <th>Category</th>
+                                    <th>Date</th>
                                     <th>Material ID</th>
                                     <th>Description</th>
                                     <th>Units</th>
-                                    <th>GL Account</th>
                                     <th>Cost</th>
                                 </tr>
                             </thead>
@@ -256,185 +246,211 @@ function showWorkOrderDetails(workOrder) {
                             </tbody>
                         </table>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
-        `;
+    </div>
+    `;
 
         // Add modal to page
         $('body').append(modalHTML);
-        modalElement = $('#workOrderDetailsModal');
-    }
 
-    // Fill in the modal with work order details
-    $('#detail-workorder-id').text(workOrder.WORKORDERID);
-    $('#detail-date').text(formatDate(workOrder.TRANSDATE));
-    $('#detail-category').text(workOrder.WOCATEGORY);
-    $('#detail-total-cost').text(formatCurrency(workOrder.TOTAL_COST));
+        // Get the modal element
+        const modalElement = $('#accountDetailsModal');
 
-    // Clear and populate items table
-    const itemsBody = $('#detail-items-tbody');
-    itemsBody.empty();
+        // Apply dark mode to modal if active
+        if (document.documentElement.classList.contains('dark-mode')) {
+            modalElement.find('.modal-content').addClass('bg-dark text-light');
+            modalElement.find('.modal-header, .modal-footer').addClass('border-secondary');
+            modalElement.find('.table').addClass('table-dark');
+        }
 
-    if (workOrder.ITEMS && workOrder.ITEMS.length > 0) {
-        workOrder.ITEMS.forEach(item => {
-            // Check if the account number is missing
-            const acctNumClass = (!item.ACCTNUM || item.ACCTNUM === '') ? 'text-danger fw-bold' : '';
-            const acctNumDisplay = (!item.ACCTNUM || item.ACCTNUM === '') ? 'Missing' : item.ACCTNUM;
+        // Fill in the modal with account details
+        let accountLabel = account.ACCTNUM;
+        if (account.IS_MISSING) {
+            accountLabel = '<span class="badge bg-danger">MISSING ACCOUNT NUMBER</span>';
+        }
 
-            const row = `
+        $('#detail-account-id').html(accountLabel);
+        $('#detail-item-count').text(account.ITEM_COUNT);
+        $('#detail-wo-count').text(account.WORK_ORDER_COUNT);
+        $('#detail-total-cost').text(formatCurrency(account.TOTAL_COST));
+
+        // Clear and populate items table
+        const itemsBody = $('#detail-items-tbody');
+        itemsBody.empty();
+
+        if (account.ITEMS && account.ITEMS.length > 0) {
+            // Sort items by work order and date
+            const sortedItems = [...account.ITEMS].sort((a, b) => {
+                // First sort by work order ID
+                if (a.WORKORDERID !== b.WORKORDERID) {
+                    return a.WORKORDERID.localeCompare(b.WORKORDERID);
+                }
+                // Then by date if same work order
+                return new Date(a.TRANSDATE) - new Date(b.TRANSDATE);
+            });
+
+            sortedItems.forEach(item => {
+                const row = `
             <tr>
+                <td>${item.WORKORDERID}</td>
+                <td>${item.WOCATEGORY}</td>
+                <td>${formatDate(item.TRANSDATE)}</td>
                 <td>${item.MATERIALUID || 'N/A'}</td>
                 <td>${item.DESCRIPTION || 'N/A'}</td>
                 <td>${item.UNITSREQUIRED || '1'}</td>
-                <td class="${acctNumClass}">${acctNumDisplay}</td>
                 <td>${formatCurrency(item.COST)}</td>
             </tr>
             `;
-            itemsBody.append(row);
-        });
-    } else {
-        itemsBody.append('<tr><td colspan="5" class="text-center">No items found</td></tr>');
-    }
-
-    // Show the modal
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-}
-
-/**
- * Update statistics based on data
- * @param {Array} data - The work order data
- */
-function updateStats(data) {
-    if (!data || !data.length) {
-        $('#totalWorkOrders').text('0');
-        $('#totalCost').text('$0.00');
-        $('#averageCost').text('$0.00');
-        $('#dateRangeInfo').text('No data available');
-        return;
-    }
-
-    // Calculate total work orders
-    const totalWorkOrders = data.length;
-    $('#totalWorkOrders').text(totalWorkOrders);
-
-    // Calculate total cost
-    const totalCost = data.reduce((sum, wo) => sum + (parseFloat(wo.TOTAL_COST) || 0), 0);
-    $('#totalCost').text(formatCurrency(totalCost));
-
-    // Calculate average cost
-    const avgCost = totalCost / totalWorkOrders;
-    $('#averageCost').text(formatCurrency(avgCost));
-
-    // Date range info
-    const startDate = $('#startDate').val();
-    const endDate = $('#endDate').val();
-    $('#dateRangeInfo').text(`${formatDate(startDate)} to ${formatDate(endDate)}`);
-}
-
-/**
- * Format date for display
- * @param {string} dateString - The date string to format
- * @returns {string} - Formatted date string
- */
-function formatDate(dateString) {
-    if (!dateString) return '';
-
-    try {
-        const date = new Date(dateString);
-
-        // Check if the date is valid
-        if (isNaN(date.getTime())) {
-            return '';
+                itemsBody.append(row);
+            });
+        } else {
+            itemsBody.append('<tr><td colspan="7" class="text-center">No items found</td></tr>');
         }
 
-        return date.toLocaleDateString();
-    } catch (error) {
-        console.error('Error formatting date:', error);
-        return '';
+        // Show the modal
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
     }
-}
 
-/**
- * Format a number as currency
- * @param {number|string} value - The number to format
- * @returns {string} - Formatted currency string
- */
-function formatCurrency(value) {
-    if (value == null) return '$0.00';
+    /**
+     * Update statistics based on data
+     * @param {Array} data - The account data
+     */
+    function updateStats(data) {
+        if (!data || !data.length) {
+            $('#totalAccounts').text('0');
+            $('#totalCost').text('$0.00');
+            $('#missingAccountsCost').text('$0.00');
+            $('#dateRangeInfo').text('No data available');
+            return;
+        }
 
-    try {
-        // Parse the value to make sure it's a number
-        const numValue = parseFloat(value);
+        // Calculate total accounts
+        const totalAccounts = data.length;
+        $('#totalAccounts').text(totalAccounts);
 
-        if (isNaN(numValue)) return '$0.00';
+        // Calculate total cost across all accounts
+        const totalCost = data.reduce((sum, acct) => sum + (parseFloat(acct.TOTAL_COST) || 0), 0);
+        $('#totalCost').text(formatCurrency(totalCost));
 
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-        }).format(numValue);
-    } catch (error) {
-        console.error('Error formatting currency:', error);
-        return '$0.00';
+        // Calculate cost of items with missing accounts
+        const missingAccounts = data.find(acct => acct.IS_MISSING);
+        const missingCost = missingAccounts ? missingAccounts.TOTAL_COST : 0;
+        $('#missingAccountsCost').text(formatCurrency(missingCost));
+
+        // Date range info
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
+        $('#dateRangeInfo').text(`${formatDate(startDate)} to ${formatDate(endDate)}`);
     }
-}
 
-/**
- * Export report data to CSV
- */
-function exportReportData() {
-    const startDate = $('#startDate').val();
-    const endDate = $('#endDate').val();
+    /**
+     * Format date for display
+     * @param {string} dateString - The date string to format
+     * @returns {string} - Formatted date string
+     */
+    function formatDate(dateString) {
+        if (!dateString) return '';
 
-    // Build export URL
-    let url = '/groups/warehouse/fifo_cost_wo/export';
-    url += `?start_date=${startDate}&end_date=${endDate}`;
+        try {
+            const date = new Date(dateString);
 
-    // Open in new tab/window
-    window.open(url, '_blank');
-}
+            // Check if the date is valid
+            if (isNaN(date.getTime())) {
+                return '';
+            }
 
-/**
- * Show an error message
- * @param {string} message - The error message to display
- */
-function showError(message) {
-    console.error(message);
+            return date.toLocaleDateString();
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return '';
+        }
+    }
 
-    // Create alert element
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-    alertDiv.setAttribute('role', 'alert');
+    /**
+     * Format a number as currency
+     * @param {number|string} value - The number to format
+     * @returns {string} - Formatted currency string
+     */
+    function formatCurrency(value) {
+        if (value == null) return '$0.00';
 
-    // Add alert content
-    alertDiv.innerHTML = `
+        try {
+            // Parse the value to make sure it's a number
+            const numValue = parseFloat(value);
+
+            if (isNaN(numValue)) return '$0.00';
+
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            }).format(numValue);
+        } catch (error) {
+            console.error('Error formatting currency:', error);
+            return '$0.00';
+        }
+    }
+
+    /**
+     * Export report data to CSV
+     * @param {string} type - Type of export ('detail' or 'summary')
+     */
+    function exportReportData(type = 'detail') {
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
+
+        // Build export URL
+        let url = '/groups/warehouse/fifo_cost_wo/export';
+        url += `?start_date=${startDate}&end_date=${endDate}&type=${type}`;
+
+        // Open in new tab/window
+        window.open(url, '_blank');
+    }
+
+    /**
+     * Show an error message
+     * @param {string} message - The error message to display
+     */
+    function showError(message) {
+        console.error(message);
+
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.setAttribute('role', 'alert');
+
+        // Add alert content
+        alertDiv.innerHTML = `
         <i class="fas fa-exclamation-triangle me-2"></i>
         <strong>Error:</strong> ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
 
-    // Find a place to add the alert
-    const container = document.querySelector('.container');
-    if (container) {
-        // Add to beginning of container
-        container.insertBefore(alertDiv, container.firstChild);
-    } else {
-        // If no container found, add to body
-        document.body.insertBefore(alertDiv, document.body.firstChild);
-    }
+        // Find a place to add the alert
+        const container = document.querySelector('.container');
+        if (container) {
+            // Add to beginning of container
+            container.insertBefore(alertDiv, container.firstChild);
+        } else {
+            // If no container found, add to body
+            document.body.insertBefore(alertDiv, document.body.firstChild);
+        }
 
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-        alertDiv.classList.remove('show');
+        // Auto-close after 5 seconds
         setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.parentNode.removeChild(alertDiv);
-            }
-        }, 150);
-    }, 5000);
-}
+            alertDiv.classList.remove('show');
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 150);
+        }, 5000);
+
+    }
+});
