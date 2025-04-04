@@ -1,7 +1,8 @@
 """
-FIFO Stock Cost Routes.
+Enhanced FIFO Stock Cost Routes.
 
-This module defines the routes for the FIFO Stock Cost report blueprint.
+This module defines enhanced routes for the FIFO Stock Cost report blueprint,
+with support for multiple category selection and improved filtering.
 """
 
 import logging
@@ -36,7 +37,6 @@ def index():
             "groups/warehouse/fifo_stock/index.html",
             title="Inventory Cost Trends Report",
         )
-
     except Exception as e:
         logger.error("Error rendering FIFO Stock Cost report index: %s", str(e))
         return render_template("error.html", error=str(e))
@@ -45,24 +45,21 @@ def index():
 @bp.route("/categories")
 def get_categories():
     """
-    Get list of available inventory categories.
+    Get list of available inventory categories, excluding blank/null values.
 
     Returns:
         Response: JSON response with categories data.
     """
     try:
-        # Get query and parameters
         query, params, db_key = get_inventory_categories()
-
-        # Execute query
         results = execute_query(query, params, db_key=db_key)
-
-        # Convert to simple list for the dropdown
-        categories = [row["CATEGORY"] for row in results]
-
-        # Return data as JSON
+        categories = [
+            row["CATEGORY"]
+            for row in results
+            if row["CATEGORY"] and row["CATEGORY"].strip()
+        ]
+        logger.info("Found %d valid category options", len(categories))
         return jsonify({"success": True, "data": categories})
-
     except Exception as e:
         logger.error("Error fetching inventory categories: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
@@ -72,42 +69,57 @@ def get_categories():
 def get_report_data():
     """
     Get report data as JSON for AJAX requests.
+    Enhanced to support multiple categories.
 
     Returns:
         Response: JSON response with report data.
     """
     try:
-        # Get category filter and threshold from request
         category = request.args.get("category", "")
-        threshold_str = request.args.get("threshold", "50")
+        categories_csv = request.args.get("categories", "")
+        categories_list = request.args.getlist("categories[]")
 
-        # Parse threshold, with default of 50 if invalid
-        try:
-            threshold = int(threshold_str)
-            if threshold < 1:
-                threshold = 50
-        except ValueError:
-            threshold = 50
+        all_categories = []
+        if category:
+            all_categories.append(category)
+        if categories_csv:
+            all_categories.extend([c.strip() for c in categories_csv.split(",")])
+        if categories_list:
+            all_categories.extend(categories_list)
 
-        if not category:
-            return jsonify({"success": False, "error": "Please select a category"}), 400
+        unique_categories = []
+        for cat in all_categories:
+            if cat and cat.strip() and cat.strip() not in unique_categories:
+                unique_categories.append(cat.strip())
 
-        # Get query and parameters
-        query, params, db_key = get_inventory_by_category(category)
+        if not unique_categories:
+            return (
+                jsonify(
+                    {"success": False, "error": "Please select at least one category"}
+                ),
+                400,
+            )
 
-        # Execute query
-        results = execute_query(query, params, db_key=db_key)
+        all_results = []
+        for category in unique_categories:
+            query, params, db_key = get_inventory_by_category(category)
+            results = execute_query(query, params, db_key=db_key)
+            all_results.extend(results)
 
-        # Return data as JSON
+        logger.info(
+            "Processed inventory data for %d categories, found %d items",
+            len(unique_categories),
+            len(all_results),
+        )
+
         return jsonify(
             {
                 "success": True,
-                "data": results,
-                "count": len(results),
-                "category": category,
+                "data": all_results,
+                "count": len(all_results),
+                "categories": unique_categories,
             }
         )
-
     except Exception as e:
         logger.error("Error fetching inventory data: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
@@ -117,66 +129,89 @@ def get_report_data():
 def get_cost_trends_data():
     """
     Get cost trend data as JSON for AJAX requests.
+    Enhanced to support multiple categories and better filtering.
 
     Returns:
         Response: JSON response with cost trend data.
     """
     try:
-        # Get category filter and threshold from request
         category = request.args.get("category", "")
-        threshold_str = request.args.get("threshold", "50")
+        categories_csv = request.args.get("categories", "")
+        categories_list = request.args.getlist("categories[]")
 
-        # Parse threshold, with default of 50 if invalid
+        all_categories = []
+        if category:
+            all_categories.append(category)
+        if categories_csv:
+            all_categories.extend([c.strip() for c in categories_csv.split(",")])
+        if categories_list:
+            all_categories.extend(categories_list)
+
+        unique_categories = []
+        for cat in all_categories:
+            if cat and cat.strip() and cat.strip() not in unique_categories:
+                unique_categories.append(cat.strip())
+
+        if not unique_categories:
+            return (
+                jsonify(
+                    {"success": False, "error": "Please select at least one category"}
+                ),
+                400,
+            )
+
+        # Get threshold parameter
+        threshold_str = request.args.get("threshold", "50")
         try:
             significant_threshold = int(threshold_str)
-            if significant_threshold < 1:
-                significant_threshold = 50
         except ValueError:
             significant_threshold = 50
 
-        if not category:
-            return jsonify({"success": False, "error": "Please select a category"}), 400
-
-        # Get query and parameters
-        query, params, db_key = get_inventory_cost_trends(category)
-
-        # Execute query
-        results = execute_query(query, params, db_key=db_key)
-
-        # Process data to calculate significant cost increases (potential input errors)
-        # using user-defined threshold
-
-        # Group by material to detect patterns
+        all_results = []
         material_data = {}
-        for row in results:
-            material_id = row["MATERIALUID"]
-            if material_id not in material_data:
-                material_data[material_id] = []
 
-            # Determine if this is a significant increase
-            # FIX: Check if PercentChange is None before comparison
-            if (
-                row["PercentChange"] is not None
-                and row["PercentChange"] > significant_threshold
-            ):
-                row["IsSignificantIncrease"] = True
-            else:
-                row["IsSignificantIncrease"] = False
+        for category_name in unique_categories:
+            query, params, db_key = get_inventory_cost_trends(category_name)
+            results = execute_query(query, params, db_key=db_key)
 
-            material_data[material_id].append(row)
+            for row in results:
+                # Treat null PercentChange as 0 for filtering
+                percent_change = (
+                    row["PercentChange"] if row["PercentChange"] is not None else 0
+                )
+                if significant_threshold == 0:
+                    # Only flag rows with exactly 0% change (including single price points)
+                    row["IsSignificantIncrease"] = abs(percent_change) == 0
+                else:
+                    row["IsSignificantIncrease"] = (
+                        abs(percent_change) >= significant_threshold
+                    )
+                row["CategoryName"] = category_name
+                all_results.append(row)
 
-        # Return data as JSON with both grouped and raw results
+                material_id = row["MATERIALUID"]
+                if material_id not in material_data:
+                    material_data[material_id] = []
+                material_data[material_id].append(row)
+
+        logger.info(
+            "Processed cost trend data for %d categories, found %d records across %d materials",
+            len(unique_categories),
+            len(all_results),
+            len(material_data),
+        )
+
         return jsonify(
             {
                 "success": True,
-                "data": results,
+                "data": all_results,
                 "materialData": material_data,
-                "count": len(results),
-                "category": category,
+                "count": len(all_results),
+                "category": ", ".join(unique_categories),
+                "categories": unique_categories,
                 "significantThreshold": significant_threshold,
             }
         )
-
     except Exception as e:
         logger.error("Error fetching cost trend data: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
@@ -186,41 +221,70 @@ def get_cost_trends_data():
 def get_summary_data():
     """
     Get summary data as JSON for AJAX requests.
+    Enhanced to support multiple categories.
 
     Returns:
         Response: JSON response with summary data.
     """
     try:
-        # Get category filter from request
         category = request.args.get("category", "")
+        categories_csv = request.args.get("categories", "")
+        categories_list = request.args.getlist("categories[]")
 
-        if not category:
-            return jsonify({"success": False, "error": "Please select a category"}), 400
+        all_categories = []
+        if category:
+            all_categories.append(category)
+        if categories_csv:
+            all_categories.extend([c.strip() for c in categories_csv.split(",")])
+        if categories_list:
+            all_categories.extend(categories_list)
 
-        # Get query and parameters
-        query, params, db_key = get_inventory_summary_by_category(category)
+        unique_categories = []
+        for cat in all_categories:
+            if cat and cat.strip() and cat.strip() not in unique_categories:
+                unique_categories.append(cat.strip())
 
-        # Execute query
-        results = execute_query(query, params, db_key=db_key)
+        if not unique_categories:
+            return (
+                jsonify(
+                    {"success": False, "error": "Please select at least one category"}
+                ),
+                400,
+            )
 
-        # Process total value for the entire category
-        total_category_value = sum(float(item["TotalValue"] or 0) for item in results)
-        total_category_quantity = sum(
-            int(item["TotalQuantity"] or 0) for item in results
+        all_results = []
+        total_category_value = 0
+        total_category_quantity = 0
+
+        for category_name in unique_categories:
+            query, params, db_key = get_inventory_summary_by_category(category_name)
+            results = execute_query(query, params, db_key=db_key)
+
+            for row in results:
+                row["CategoryName"] = category_name
+                if row["PercentIncrease"] is None:
+                    row["PercentIncrease"] = 0
+                all_results.append(row)
+                total_category_value += float(row["TotalValue"] or 0)
+                total_category_quantity += float(row["TotalQuantity"] or 0)
+
+        logger.info(
+            "Processed summary data for %d categories, found %d items",
+            len(unique_categories),
+            len(all_results),
         )
 
-        # Return data as JSON
         return jsonify(
             {
                 "success": True,
-                "data": results,
-                "count": len(results),
-                "category": category,
+                "data": all_results,
+                "count": len(all_results),
+                "category": ", ".join(unique_categories),
+                "categories": unique_categories,
                 "totalValue": total_category_value,
                 "totalQuantity": total_category_quantity,
             }
         )
-
     except Exception as e:
         logger.error("Error fetching inventory summary data: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
@@ -230,63 +294,94 @@ def get_summary_data():
 def export_report():
     """
     Export report data to CSV.
+    Enhanced to support multiple categories.
 
     Returns:
         Response: CSV file download.
     """
     try:
-        # Get category filter and export type from request
         category = request.args.get("category", "")
+        categories_csv = request.args.get("categories", "")
+        categories_list = request.args.getlist("categories[]")
+
+        all_categories = []
+        if category:
+            all_categories.append(category)
+        if categories_csv:
+            all_categories.extend([c.strip() for c in categories_csv.split(",")])
+        if categories_list:
+            all_categories.extend(categories_list)
+
+        unique_categories = []
+        for cat in all_categories:
+            if cat and cat.strip() and cat.strip() not in unique_categories:
+                unique_categories.append(cat.strip())
+
+        if not unique_categories:
+            return (
+                jsonify(
+                    {"success": False, "error": "Please select at least one category"}
+                ),
+                400,
+            )
+
         export_type = request.args.get(
             "type", "detail"
         )  # 'detail', 'summary' or 'trends'
+        all_results = []
 
-        if not category:
-            return jsonify({"success": False, "error": "Please select a category"}), 400
+        for category_name in unique_categories:
+            if export_type == "summary":
+                query, params, db_key = get_inventory_summary_by_category(category_name)
+            elif export_type == "trends":
+                query, params, db_key = get_inventory_cost_trends(category_name)
+            else:
+                query, params, db_key = get_inventory_by_category(category_name)
 
-        # Get query and parameters based on export type
-        if export_type == "summary":
-            query, params, db_key = get_inventory_summary_by_category(category)
-        elif export_type == "trends":
-            query, params, db_key = get_inventory_cost_trends(category)
-        else:
-            query, params, db_key = get_inventory_by_category(category)
+            results = execute_query(query, params, db_key=db_key)
 
-        # Execute query
-        results = execute_query(query, params, db_key=db_key)
+            for row in results:
+                row["CategoryName"] = category_name
+                if export_type == "trends" and row.get("PercentChange") is None:
+                    row["PercentChange"] = 0
+                if export_type == "summary" and row.get("PercentIncrease") is None:
+                    row["PercentIncrease"] = 0
+                all_results.append(row)
 
-        if not results:
+        if not all_results:
             return (
                 jsonify(
                     {
                         "success": False,
-                        "error": "No data found for the selected category",
+                        "error": "No data found for the selected categories",
                     }
                 ),
                 404,
             )
 
-        # Create CSV file in memory
         si = StringIO()
         writer = csv.writer(si)
+        header = list(all_results[0].keys())
+        writer.writerow(header)
+        for row in all_results:
+            writer.writerow([row.get(key, "") for key in header])
 
-        # Write header row
-        writer.writerow(results[0].keys())
-
-        # Write data rows
-        for row in results:
-            writer.writerow(row.values())
-
-        # Create response with CSV file
         output = si.getvalue()
-        filename = f"inventory_{category}_{export_type}_{datetime.now().strftime('%Y%m%d')}.csv"
+
+        if len(unique_categories) == 1:
+            category_str = unique_categories[0]
+        elif len(unique_categories) <= 3:
+            category_str = "-".join([c.replace(" ", "_") for c in unique_categories])
+        else:
+            category_str = f"{len(unique_categories)}_categories"
+
+        filename = f"inventory_{category_str}_{export_type}_{datetime.now().strftime('%Y%m%d')}.csv"
 
         return Response(
             output,
             mimetype="text/csv",
             headers={"Content-disposition": f"attachment; filename={filename}"},
         )
-
     except Exception as e:
         logger.error("Error exporting report: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500

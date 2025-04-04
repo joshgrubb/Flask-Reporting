@@ -4,6 +4,8 @@
 
 {% block cdn_resources %}
 {{ include_cdn(bundles=["datatables", "chartjs", "datepicker"]) }}
+<!-- Add Select2 for better multiselect support -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -21,24 +23,25 @@
     </div>
 </div>
 
-<!-- Category Filter -->
+<!-- Category Filter with Multiselect -->
 <div class="row mb-4">
     <div class="col">
         <div class="filters">
             <form id="reportFilters">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-5">
+                    <div class="col-md-6">
                         <label for="categorySelect" class="form-label">Select Category</label>
-                        <select class="form-select" id="categorySelect" name="category">
-                            <option value="">Select a category...</option>
+                        <!-- Multiple select dropdown using Select2 -->
+                        <select class="form-select" id="categorySelect" name="categories[]" multiple="multiple">
                             <!-- Categories will be loaded dynamically -->
                         </select>
+                        <small class="form-text text-muted">You can select multiple categories</small>
                     </div>
                     <div class="col-md-3">
-                        <label for="thresholdInput" class="form-label">Significant Cost Increase (%)</label>
+                        <label for="thresholdInput" class="form-label">Significant Cost Change (%)</label>
                         <div class="input-group">
                             <input type="number" class="form-control" id="thresholdInput" name="threshold" value="50"
-                                min="1" max="1000" step="1">
+                                min="0" max="1000" step="1">
                             <span class="input-group-text">%</span>
                             <button type="button" class="btn btn-outline-secondary" id="resetThreshold"
                                 title="Reset to default">
@@ -46,7 +49,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <button type="button" id="applyFilters" class="btn btn-primary">
                             <i class="fas fa-filter"></i> Apply Filter
                         </button>
@@ -73,7 +76,8 @@
     <div class="col">
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>
-            Please select a category from the dropdown and click "Apply Filter" to view inventory cost trend data.
+            Please select at least one category from the dropdown and click "Apply Filter" to view inventory cost trend
+            data.
         </div>
     </div>
 </div>
@@ -175,41 +179,11 @@
     </div>
 </div>
 
-<!-- Summary Data Table (Initially Hidden) -->
-<div id="summaryDataSection" class="row mt-4" style="display: none;">
-    <div class="col">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Inventory Summary by Material</h5>
-            </div>
-            <div class="card-body">
-                <div id="summaryTableContainer" class="loading">
-                    <table id="summaryTable" class="table table-striped table-bordered" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>Material ID</th>
-                                <th>Description</th>
-                                <th>Total Quantity</th>
-                                <th>Avg Unit Cost</th>
-                                <th>Min Cost</th>
-                                <th>Max Cost</th>
-                                <th>% Increase</th>
-                                <th>Total Value</th>
-                                <th>Date Range</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
+<!-- Add Select2 JS for enhanced multiselect -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <!-- Custom JS for this report -->
 <script src="{{ url_for('static', filename='js/warehouse/fifo_stock.js') }}"></script>
 {% endblock %}

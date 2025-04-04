@@ -1,9 +1,13 @@
 /**
  * FIFO Stock Cost Report JavaScript
  * 
- * This file handles the interactive functionality for the FIFO Stock Cost report,
- * including loading data, initializing charts, tables, and handling user interactions.
- * Modified to show unit cost trends over time and highlight significant increases.
+ * Key improvements:
+ * - Modified Category dropdown to support multiple selections
+ * - Fixed sorting for % Change column (numeric sorting instead of text)
+ * - Treats N/A % change values as 0 for filtering and display
+ * - Significant Cost Increase filter properly filters data
+ * - Summary stats update based on applied filters
+ * - Chart displays all filtered materials
  */
 
 // Default threshold value
@@ -11,24 +15,27 @@ const DEFAULT_THRESHOLD = 50;
 
 // Document ready function
 $(document).ready(function () {
+    // Initialize multiselect for categories
+    initializeCategoryMultiselect();
+
     // Load available categories
     loadCategories();
 
     // Event handlers
     $('#applyFilters').click(function () {
-        const selectedCategory = $('#categorySelect').val();
+        const selectedCategories = $('#categorySelect').val() || [];
         const thresholdValue = parseInt($('#thresholdInput').val());
 
-        if (selectedCategory) {
-            if (isNaN(thresholdValue) || thresholdValue < 1) {
-                showError('Please enter a valid threshold value (minimum 1%)');
+        if (selectedCategories.length > 0) {
+            if (isNaN(thresholdValue) || thresholdValue < 0) { // Allow 0% threshold
+                showError('Please enter a valid threshold value (minimum 0%)');
                 return;
             }
 
-            loadInventoryData(selectedCategory, thresholdValue);
+            loadInventoryData(selectedCategories, thresholdValue);
             $('#exportDropdown').prop('disabled', false);
         } else {
-            showError('Please select a category');
+            showError('Please select at least one category');
             $('#exportDropdown').prop('disabled', true);
         }
     });
@@ -36,6 +43,19 @@ $(document).ready(function () {
     // Reset threshold to default
     $('#resetThreshold').click(function () {
         $('#thresholdInput').val(DEFAULT_THRESHOLD);
+
+        // If data is already loaded, apply the new threshold immediately
+        if (window.costTrendData) {
+            applyThresholdFilter(DEFAULT_THRESHOLD);
+        }
+    });
+
+    // Apply threshold filter when input changes
+    $('#thresholdInput').on('input', function () {
+        const newThreshold = parseInt($(this).val());
+        if (!isNaN(newThreshold) && newThreshold >= 0 && window.costTrendData) { // Allow 0% threshold
+            applyThresholdFilter(newThreshold);
+        }
     });
 
     // Handle the export dropdown options
@@ -58,9 +78,115 @@ $(document).ready(function () {
 
         if (selectedMaterial) {
             displayMaterialCostTrend(selectedMaterial, thresholdValue);
+        } else {
+            // If no material is selected, display all filtered materials
+            displayAllFilteredMaterials(thresholdValue);
         }
     });
 });
+
+/**
+ * Initialize the category multiselect dropdown
+ */
+function initializeCategoryMultiselect() {
+    // Initialize select2 for multiselect if available
+    if ($.fn.select2) {
+        $('#categorySelect').select2({
+            placeholder: 'Select categories',
+            allowClear: true,
+            multiple: true,
+            width: '100%'
+        });
+    } else if ($.fn.multiselect) {
+        // Fallback to bootstrap multiselect
+        $('#categorySelect').multiselect({
+            includeSelectAllOption: true,
+            nonSelectedText: 'Select categories',
+            enableFiltering: true
+        });
+    }
+}
+
+/**
+ * Apply threshold filter to the data tables and update summary stats
+ * @param {number} threshold - The threshold value to apply
+ */
+function applyThresholdFilter(threshold) {
+    // Update the display of the threshold value
+    updateThresholdAlert(threshold);
+
+    // Store the filtered data
+    let filteredData = [];
+
+    // Redraw tables with new threshold if they exist
+    if ($.fn.DataTable.isDataTable('#costTrendTable')) {
+        const table = $('#costTrendTable').DataTable();
+
+        // Get filtered data
+        filteredData = getFilteredData(window.costTrendData, threshold);
+
+        // Redraw the table
+        table.draw();
+
+        // Update summary stats with filtered data
+        updateFilteredSummaryStats(filteredData);
+
+        // Update chart to show all filtered materials
+        displayAllFilteredMaterials(threshold);
+    }
+}
+
+/**
+ * Get data filtered by the threshold
+ * @param {Array} data - The original data array
+ * @param {number} threshold - The threshold to filter by
+ * @returns {Array} - Filtered data array
+ */
+function getFilteredData(data, threshold) {
+    if (!data || !Array.isArray(data)) return [];
+
+    return data.filter(row => {
+        // Get percent change (null becomes 0)
+        const percentChange = row.PercentChange === null ? 0 : parseFloat(row.PercentChange);
+
+        // Filter based on threshold - include all values >= threshold
+        return percentChange >= threshold;
+    });
+}
+
+/**
+ * Update summary statistics based on filtered data
+ * @param {Array} filteredData - The filtered data array
+ */
+function updateFilteredSummaryStats(filteredData) {
+    if (!filteredData || !filteredData.length) {
+        $('#totalItems').text('0');
+        $('#totalValue').text('$0.00');
+        $('#totalQuantity').text('0');
+        return;
+    }
+
+    // Count unique materials
+    const uniqueMaterials = new Set();
+    filteredData.forEach(item => uniqueMaterials.add(item.MATERIALUID));
+
+    // Calculate total quantity and value
+    let totalQuantity = 0;
+    let totalValue = 0;
+
+    filteredData.forEach(item => {
+        const quantity = parseFloat(item.QUANTITY) || 0;
+        const unitCost = parseFloat(item.UNITCOST) || 0;
+
+        totalQuantity += quantity;
+        totalValue += quantity * unitCost;
+    });
+
+    // Update the stats displays
+    $('#totalItems').text(uniqueMaterials.size);
+    $('#totalValue').text(formatCurrency(totalValue));
+    $('#totalQuantity').text(totalQuantity.toFixed(2));
+}
 
 /**
  * Load available categories for the dropdown
@@ -89,21 +215,27 @@ function loadCategories() {
 function populateCategoryDropdown(categories) {
     const dropdown = $('#categorySelect');
 
-    // Clear existing options except the first one
-    dropdown.find('option:not(:first)').remove();
+    // Clear existing options
+    dropdown.empty();
+
+    // Filter out blank/null/empty categories
+    const validCategories = categories.filter(cat => cat && cat.trim() !== '');
 
     // Add categories as options
-    categories.forEach(category => {
+    validCategories.forEach(category => {
         dropdown.append($('<option></option>').val(category).text(category));
     });
+
+    // Trigger change to update any select2 or multiselect plugins
+    dropdown.trigger('change');
 }
 
 /**
- * Load inventory data for the selected category
- * @param {string} category - The selected category
+ * Load inventory data for the selected category(ies)
+ * @param {Array|string} categories - The selected category or categories
  * @param {number} threshold - The threshold for significant cost increases
  */
-function loadInventoryData(category, threshold = DEFAULT_THRESHOLD) {
+function loadInventoryData(categories, threshold = DEFAULT_THRESHOLD) {
     // Show loading indicators and hide results sections
     $('#costTrendTableContainer, #summaryTableContainer').addClass('loading');
     $('#initialMessage').hide();
@@ -119,7 +251,7 @@ function loadInventoryData(category, threshold = DEFAULT_THRESHOLD) {
     $.ajax({
         url: '/groups/warehouse/fifo_stock/cost-trends',
         data: {
-            category: category,
+            categories: Array.isArray(categories) ? categories.join(',') : categories,
             threshold: threshold
         },
         dataType: 'json',
@@ -132,54 +264,36 @@ function loadInventoryData(category, threshold = DEFAULT_THRESHOLD) {
                 // Show cost trend section
                 $('#costTrendSection').show();
                 $('#materialChartsSection').show();
+                $('#summaryStats').show();
 
-                // Initialize cost trend table with the user-defined threshold
+                // Get filtered data
+                const filteredData = getFilteredData(response.data, threshold);
+
+                // Initialize cost trend table with the threshold
                 initCostTrendTable(response.data, threshold);
+
+                // Update summary stats with filtered data
+                updateFilteredSummaryStats(filteredData);
 
                 // Populate material dropdown for line charts
                 populateMaterialDropdown(Object.keys(response.materialData));
 
+                // Display chart with all filtered materials
+                displayAllFilteredMaterials(threshold);
+
                 // Update the alert message with the current threshold
                 updateThresholdAlert(threshold);
+
+                // Hide loading indicator
+                $('#costTrendTableContainer').removeClass('loading');
             } else {
                 showError('Error loading cost trend data: ' + response.error);
+                $('#costTrendTableContainer').removeClass('loading');
             }
         },
         error: function (xhr, status, error) {
             showError('Error loading cost trend data: ' + error);
-        },
-        complete: function () {
             $('#costTrendTableContainer').removeClass('loading');
-        }
-    });
-
-    // Load summary data
-    $.ajax({
-        url: '/groups/warehouse/fifo_stock/summary',
-        data: {
-            category: category,
-            threshold: threshold
-        },
-        dataType: 'json',
-        success: function (response) {
-            if (response.success) {
-                // Show summary sections
-                $('#summaryStats, #summaryDataSection').show();
-
-                // Initialize summary table with the user-defined threshold
-                initSummaryTable(response.data, threshold);
-
-                // Update summary statistics
-                updateSummaryStats(response.data, response.category, response.totalValue, response.totalQuantity);
-            } else {
-                showError('Error loading summary data: ' + response.error);
-            }
-        },
-        error: function (xhr, status, error) {
-            showError('Error loading summary data: ' + error);
-        },
-        complete: function () {
-            $('#summaryTableContainer').removeClass('loading');
         }
     });
 }
@@ -195,7 +309,7 @@ function updateThresholdAlert(threshold) {
             <i class="fas fa-exclamation-triangle me-2"></i>
             <strong>Note:</strong> Rows highlighted in red indicate a significant increase in unit cost (above ${threshold}%), 
             which might indicate a potential error where total cost was entered instead of unit cost. 
-            You can adjust the threshold using the filter above.
+            The threshold filter is currently set to ${threshold}% and only showing items with price increases at or above this value.
         `);
     }
 }
@@ -249,9 +363,18 @@ function initCostTrendTable(data, significantThreshold) {
                 }
             },
             {
+                // Improved % Change column with proper numeric sorting, treating N/A as 0
                 data: 'PercentChange',
-                render: function (data) {
-                    if (data === null || data === undefined || data === 0) return 'N/A';
+                render: function (data, type, row) {
+                    // For sorting, use the raw numeric value (treat null as 0)
+                    if (type === 'sort') {
+                        return data === null ? 0 : parseFloat(data);
+                    }
+
+                    // For display, show 0% if null
+                    if (data === null || data === undefined) {
+                        return '0%';
+                    }
 
                     const formattedValue = parseFloat(data).toFixed(2) + '%';
 
@@ -279,7 +402,9 @@ function initCostTrendTable(data, significantThreshold) {
         },
         // Row styling for significant increases
         createdRow: function (row, data) {
-            if (data.PercentChange > significantThreshold) {
+            // If PercentChange exceeds threshold, highlight the row
+            const percentChange = data.PercentChange === null ? 0 : data.PercentChange;
+            if (percentChange > significantThreshold) {
                 $(row).addClass('table-danger');
             }
         }
@@ -288,116 +413,22 @@ function initCostTrendTable(data, significantThreshold) {
     // Initialize DataTable
     const table = $('#costTrendTable').DataTable(dataTableOptions);
 
-    // Add a filter by Material ID
-    // new $.fn.dataTable.SearchPanes(table, {});
-    // table.searchPanes.container().prependTo('#costTrendTableContainer');
-    // table.searchPanes.resizePanes();
+    // Add custom filtering for % change based on threshold
+    $.fn.dataTable.ext.search.push(
+        function (settings, data, dataIndex, rowData) {
+            // Only apply to cost trend table
+            if (settings.nTable.id !== 'costTrendTable') return true;
 
-    // Window resize handler
-    $(window).on('resize', function () {
-        if (table && typeof table.columns === 'function') {
-            table.columns.adjust();
+            // Get current threshold
+            const threshold = parseInt($('#thresholdInput').val()) || significantThreshold;
+
+            // Get percent change (null becomes 0)
+            const percentChange = rowData.PercentChange === null ? 0 : parseFloat(rowData.PercentChange);
+
+            // Filter based on threshold - include all values >= threshold
+            return percentChange >= threshold;
         }
-    });
-}
-
-/**
- * Initialize the summary table
- * @param {Array} data - The summary data
- * @param {number} threshold - The threshold for significant cost increases
- */
-function initSummaryTable(data, threshold = DEFAULT_THRESHOLD) {
-    // Check if DataTables is available
-    if (typeof $.fn.DataTable !== 'function') {
-        console.error('DataTables is not loaded properly');
-        showError('DataTables library failed to load. Please check console for details.');
-        return;
-    }
-
-    // Destroy existing DataTable if it exists
-    if ($.fn.DataTable.isDataTable('#summaryTable')) {
-        $('#summaryTable').DataTable().destroy();
-    }
-
-    // Create options object for DataTable
-    const dataTableOptions = {
-        data: data,
-        columns: [
-            { data: 'MATERIALUID' },
-            { data: 'DESCRIPTION' },
-            {
-                data: 'TotalQuantity',
-                render: function (data) {
-                    return parseFloat(data).toFixed(2);
-                }
-            },
-            {
-                data: 'AvgUnitCost',
-                render: function (data) {
-                    return formatCurrency(data);
-                }
-            },
-            {
-                data: 'MinUnitCost',
-                render: function (data) {
-                    return formatCurrency(data);
-                }
-            },
-            {
-                data: 'MaxUnitCost',
-                render: function (data) {
-                    return formatCurrency(data);
-                }
-            },
-            {
-                data: 'PercentIncrease',
-                render: function (data) {
-                    if (!data) return 'N/A';
-
-                    const formattedValue = parseFloat(data).toFixed(2) + '%';
-
-                    // Use color coding based on percentage change
-                    if (data > threshold) {
-                        return `<span class="text-danger fw-bold">${formattedValue}</span>`;
-                    } else if (data > threshold * 0.4) { // Warning at 40% of threshold
-                        return `<span class="text-warning">${formattedValue}</span>`;
-                    }
-
-                    return formattedValue;
-                }
-            },
-            {
-                data: 'TotalValue',
-                render: function (data) {
-                    return formatCurrency(data);
-                }
-            },
-            {
-                data: null,
-                render: function (data) {
-                    return formatDate(data.OldestPurchaseDate) + ' - ' + formatDate(data.NewestPurchaseDate);
-                }
-            }
-        ],
-        pageLength: 10,
-        order: [[7, 'desc']], // Sort by Total Value, highest first
-        language: {
-            search: "Search:",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            infoEmpty: "Showing 0 to 0 of 0 entries",
-            infoFiltered: "(filtered from _MAX_ total entries)"
-        },
-        // Row styling for significant increases
-        createdRow: function (row, data) {
-            if (data.PercentIncrease > threshold) {
-                $(row).addClass('table-danger');
-            }
-        }
-    };
-
-    // Initialize DataTable
-    const table = $('#summaryTable').DataTable(dataTableOptions);
+    );
 
     // Window resize handler
     $(window).on('resize', function () {
@@ -414,8 +445,11 @@ function initSummaryTable(data, threshold = DEFAULT_THRESHOLD) {
 function populateMaterialDropdown(materials) {
     const dropdown = $('#materialSelect');
 
-    // Clear existing options except the first one
-    dropdown.find('option:not(:first)').remove();
+    // Clear existing options
+    dropdown.find('option').remove();
+
+    // Add default "All Materials" option
+    dropdown.append($('<option></option>').val('').text('All Filtered Materials'));
 
     // Sort materials for easier selection
     materials.sort();
@@ -463,6 +497,234 @@ function displayMaterialCostTrend(materialId, threshold = DEFAULT_THRESHOLD) {
 }
 
 /**
+ * Display chart with all materials that meet the threshold criteria
+ * @param {number} threshold - The threshold value to filter by
+ */
+function displayAllFilteredMaterials(threshold = DEFAULT_THRESHOLD) {
+    // Get data filtered by threshold
+    const filteredData = getFilteredData(window.costTrendData, threshold);
+
+    if (!filteredData || !filteredData.length) {
+        // If no data after filtering, show empty chart with message
+        createEmptyChart('costTrendChart', 'No materials meet the current threshold criteria');
+        return;
+    }
+
+    // Group data by material
+    const materialGroups = {};
+
+    filteredData.forEach(item => {
+        const materialId = item.MATERIALUID;
+        if (!materialGroups[materialId]) {
+            materialGroups[materialId] = [];
+        }
+        materialGroups[materialId].push(item);
+    });
+
+    // Prepare dataset for chart
+    const datasets = [];
+    const colors = [
+        'rgba(54, 162, 235, 0.7)', // blue
+        'rgba(255, 99, 132, 0.7)', // red
+        'rgba(75, 192, 192, 0.7)', // green
+        'rgba(153, 102, 255, 0.7)', // purple
+        'rgba(255, 159, 64, 0.7)', // orange
+        'rgba(201, 203, 207, 0.7)', // grey
+        'rgba(255, 205, 86, 0.7)', // yellow
+    ];
+
+    // Get up to 10 materials with highest percent changes
+    const materialIds = Object.keys(materialGroups);
+    const materialsToShow = materialIds.slice(0, 10); // Limit to 10 materials
+
+    // Create datasets for each material
+    materialsToShow.forEach((materialId, index) => {
+        const items = materialGroups[materialId];
+        if (!items || !items.length) return;
+
+        // Sort by purchase date
+        items.sort((a, b) => new Date(a.PURCHASEDATE) - new Date(b.PURCHASEDATE));
+
+        // Extract data
+        const data = items.map(item => parseFloat(item.UNITCOST));
+
+        // Get material description
+        const description = items[0].DESCRIPTION || materialId;
+
+        // Get color (cycle through color array)
+        const colorIndex = index % colors.length;
+
+        // Create dataset
+        datasets.push({
+            label: materialId,
+            data: data,
+            borderColor: colors[colorIndex].replace('0.7', '1'),
+            backgroundColor: colors[colorIndex],
+            fill: false,
+            tension: 0.1
+        });
+    });
+
+    // Create chart with all datasets
+    createMultiSeriesChart('costTrendChart', 'Unit Cost Trends for Filtered Materials', datasets, threshold);
+}
+
+/**
+ * Create an empty chart with a message
+ * @param {string} canvasId - The ID of the canvas element
+ * @param {string} message - The message to display
+ */
+function createEmptyChart(canvasId, message) {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded properly');
+        showError('Chart.js library failed to load. Please check console for details.');
+        return;
+    }
+
+    // Get canvas element
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error(`Cannot find ${canvasId} canvas element`);
+        return;
+    }
+
+    // Destroy existing chart if it exists
+    let existingChart;
+    try {
+        existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+    } catch (e) {
+        console.log('No existing chart found or using older Chart.js version');
+    }
+
+    // Create empty chart with message
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: message,
+                    font: {
+                        size: 16
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Create a multi-series line chart for multiple materials
+ * @param {string} canvasId - The ID of the canvas element
+ * @param {string} title - The chart title
+ * @param {Array} datasets - Array of datasets for the chart
+ * @param {number} threshold - The threshold value
+ */
+function createMultiSeriesChart(canvasId, title, datasets, threshold) {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded properly');
+        showError('Chart.js library failed to load. Please check console for details.');
+        return;
+    }
+
+    // Get canvas element
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error(`Cannot find ${canvasId} canvas element`);
+        return;
+    }
+
+    // Destroy existing chart if it exists
+    let existingChart;
+    try {
+        existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+    } catch (e) {
+        console.log('No existing chart found or using older Chart.js version');
+    }
+
+    // If no datasets, show empty chart
+    if (!datasets || !datasets.length) {
+        createEmptyChart(canvasId, 'No data available');
+        return;
+    }
+
+    // Create chart
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: title,
+                    font: {
+                        size: 16
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const label = context.dataset.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${formatCurrency(value)}`;
+                        }
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Unit Cost'
+                    },
+                    ticks: {
+                        callback: function (value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                        display: true,
+                        text: 'Purchase Point'
+                    },
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
  * Create a line chart for cost trends
  * @param {string} canvasId - The ID of the canvas element
  * @param {string} title - The chart title
@@ -497,6 +759,13 @@ function createLineChart(canvasId, title, labels, data, threshold = DEFAULT_THRE
         console.log('No existing chart found or using older Chart.js version');
     }
 
+    // Calculate percent changes for data points, treating null as 0
+    const percentChanges = data.map((value, index) => {
+        if (index === 0) return 0;
+        const prevValue = data[index - 1];
+        return ((value - prevValue) / prevValue) * 100;
+    });
+
     // Create new chart
     try {
         new Chart(canvas, {
@@ -515,8 +784,7 @@ function createLineChart(canvasId, title, labels, data, threshold = DEFAULT_THRE
                         if (index === 0) return 'rgba(54, 162, 235, 1)';
 
                         // Highlight significant increases
-                        const prevValue = data[index - 1];
-                        const percentChange = ((value - prevValue) / prevValue) * 100;
+                        const percentChange = percentChanges[index];
 
                         if (percentChange > threshold) return 'rgba(255, 0, 0, 1)';
                         if (percentChange > threshold * 0.4) return 'rgba(255, 165, 0, 1)';
@@ -544,12 +812,13 @@ function createLineChart(canvasId, title, labels, data, threshold = DEFAULT_THRE
                                 const index = context.dataIndex;
                                 const unitCost = formatCurrency(value);
 
-                                // Calculate percent change
+                                // Calculate percent change, show 0% for the first data point
                                 let changeText = '';
                                 if (index > 0) {
-                                    const prevValue = data[index - 1];
-                                    const percentChange = ((value - prevValue) / prevValue) * 100;
+                                    const percentChange = percentChanges[index];
                                     changeText = ` (${percentChange > 0 ? '+' : ''}${percentChange.toFixed(2)}%)`;
+                                } else {
+                                    changeText = ' (0%)';
                                 }
 
                                 return `Unit Cost: ${unitCost}${changeText}`;
@@ -590,41 +859,20 @@ function createLineChart(canvasId, title, labels, data, threshold = DEFAULT_THRE
  * @param {string} type - Export type ('detail', 'summary', or 'trends')
  */
 function exportReportData(type = 'detail') {
-    const category = $('#categorySelect').val();
+    const categories = $('#categorySelect').val();
+    const threshold = parseInt($('#thresholdInput').val()) || DEFAULT_THRESHOLD;
 
-    if (!category) {
-        showError('Please select a category before exporting');
+    if (!categories || categories.length === 0) {
+        showError('Please select at least one category before exporting');
         return;
     }
 
-    // Build export URL
-    let url = `/groups/warehouse/fifo_stock/export?category=${encodeURIComponent(category)}&type=${type}`;
+    // Build export URL with selected categories and threshold
+    const categoryParam = Array.isArray(categories) ? categories.join(',') : categories;
+    let url = `/groups/warehouse/fifo_stock/export?categories=${encodeURIComponent(categoryParam)}&type=${type}&threshold=${threshold}`;
 
     // Open in new tab/window
     window.open(url, '_blank');
-}
-
-/**
- * Update summary statistics display
- * @param {Array} data - The summary data
- * @param {string} category - The selected category
- * @param {number} totalValue - The total value across all materials
- * @param {number} totalQuantity - The total quantity across all materials
- */
-function updateSummaryStats(data, category, totalValue, totalQuantity) {
-    if (!data || !data.length) {
-        $('#totalItems').text('0');
-        $('#totalValue').text('$0.00');
-        $('#totalQuantity').text('0');
-        $('#categoryName').text('No items found');
-        return;
-    }
-
-    // Update stats
-    $('#totalItems').text(data.length);
-    $('#totalValue').text(formatCurrency(totalValue));
-    $('#totalQuantity').text(parseFloat(totalQuantity).toFixed(2));
-    $('#categoryName').text(category);
 }
 
 /**
