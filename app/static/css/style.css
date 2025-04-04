@@ -1,58 +1,68 @@
-/* Enhanced styles for Flask Reporting Application - Masculine Color Scheme */
+/* Updated styles for Flask Reporting Application */
 
-/* Color Scheme Variables - Light Mode (Default) */
+/* Light Mode (Default) */
 :root {
     /* Primary colors */
-    --primary-color: #1e40af;
-    /* Strong navy blue */
-    --primary-light: #dbeafe;
-    --primary-dark: #1e3a8a;
+    --primary-color: #0D3B66;
+    /* Deep, confident navy blue */
+    --primary-light: #E6ECF3;
+    /* Lighter tint for accents */
+    --primary-dark: #0A2C50;
+    /* Darker variant for hover/active states */
 
     /* Secondary colors */
-    --secondary-color: #0f766e;
-    /* Deep teal */
-    --secondary-light: #d1faf6;
-    --secondary-dark: #065f46;
+    --secondary-color: #4F6D7A;
+    /* Cool slate blue */
+    --secondary-light: #A3B3BF;
+    /* Lighter slate */
+    --secondary-dark: #394451;
+    /* Darker slate */
 
-    /* Accent colors */
-    --accent-color: #b45309;
-    /* Bold amber */
-    --accent-light: #fef3c7;
-    --accent-dark: #92400e;
+    /* Accent colors - neutral */
+    --accent-color: #A8A8A8;
+    --accent-light: #D1D1D1;
+    --accent-dark: #7A7A7A;
 
     /* Neutral colors */
-    --text-primary: #1f2937;
-    --text-secondary: #4b5563;
-    --text-muted: #6b7280;
+    --text-primary: #333333;
+    --text-secondary: #555555;
+    --text-muted: #777777;
 
-    /* Success, warning, error states */
-    --success-color: #15803d;
+    /* Status colors */
+    --success-color: #2E7D32;
     /* Forest green */
-    --success-light: #dcfce7;
-    --warning-color: #ca8a04;
+    --success-light: #C8E6C9;
+    --warning-color: #FF8C00;
     /* Deep amber */
-    --warning-light: #fef9c3;
-    --danger-color: #b91c1c;
+    --warning-light: #FFE0B2;
+    --danger-color: #D32F2F;
     /* Deep red */
-    --danger-light: #fee2e2;
+    --danger-light: #FFCDD2;
 
     /* Background and surfaces */
-    --background-color: #f9fafb;
-    --surface-color: #ffffff;
-    --card-background: #ffffff;
+    --background-color: #F8F9FA;
+    /* Light off-white */
+    --surface-color: #FFFFFF;
+    --card-background: #FFFFFF;
 
     /* Border and dividers */
     --border-color: rgba(0, 0, 0, 0.1);
     --divider-color: rgba(0, 0, 0, 0.06);
 
     /* RGB Values for opacity operations */
-    --primary-color-rgb: 30, 64, 175;
-    --secondary-color-rgb: 15, 118, 110;
-    --accent-color-rgb: 180, 83, 9;
-    --success-color-rgb: 21, 128, 61;
-    --warning-color-rgb: 202, 138, 4;
-    --danger-color-rgb: 185, 28, 28;
-    --background-color-rgb: 249, 250, 251;
+    --primary-color-rgb: 13, 59, 102;
+    /* from #0D3B66 */
+    --secondary-color-rgb: 79, 109, 122;
+    /* from #4F6D7A */
+    --accent-color-rgb: 168, 168, 168;
+    --success-color-rgb: 46, 125, 50;
+    /* from #2E7D32 */
+    --warning-color-rgb: 255, 140, 0;
+    /* from #FF8C00 */
+    --danger-color-rgb: 211, 47, 47;
+    /* from #D32F2F */
+    --background-color-rgb: 248, 249, 250;
+    /* from #F8F9FA */
 
     /* Effects */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -62,71 +72,78 @@
     --border-radius: 8px;
 
     /* DataTables specific colors */
-    --dt-header-bg: #f1f5f9;
-    --dt-header-text: #1f2937;
-    --dt-row-hover: rgba(67, 97, 238, 0.05);
+    --dt-header-bg: #E6ECF3;
+    --dt-header-text: #333333;
+    --dt-row-hover: rgba(13, 59, 102, 0.1);
     --dt-stripe-bg: rgba(0, 0, 0, 0.02);
-    --dt-buttons-bg: #1e40af;
-    --dt-buttons-text: #ffffff;
-    --dt-pagination-bg: #ffffff;
-    --dt-pagination-text: #1f2937;
-    --dt-pagination-active-bg: #1e40af;
-    --dt-pagination-active-text: #ffffff;
+    --dt-buttons-bg: #0D3B66;
+    --dt-buttons-text: #FFFFFF;
+    --dt-pagination-bg: #FFFFFF;
+    --dt-pagination-text: #333333;
+    --dt-pagination-active-bg: #0D3B66;
+    --dt-pagination-active-text: #FFFFFF;
 }
 
 /* Dark Mode Variables */
 .dark-mode {
     /* Primary colors */
-    --primary-color: #3b82f6;
+    --primary-color: #3A78D8;
     /* Bright blue */
-    --primary-light: #1e3a8a;
-    --primary-dark: #93c5fd;
+    --primary-light: #6FA3FF;
+    /* Lighter blue */
+    --primary-dark: #315BBF;
+    /* Darker blue */
 
     /* Secondary colors */
-    --secondary-color: #14b8a6;
-    /* Teal */
-    --secondary-light: #134e4a;
-    --secondary-dark: #5eead4;
+    --secondary-color: #6B7B8C;
+    /* Muted slate blue */
+    --secondary-light: #9AA4AC;
+    --secondary-dark: #5A636B;
 
-    /* Accent colors */
-    --accent-color: #f59e0b;
-    /* Amber */
-    --accent-light: #78350f;
-    --accent-dark: #fcd34d;
+    /* Accent colors - neutral */
+    --accent-color: #A8A8A8;
+    --accent-light: #D1D1D1;
+    --accent-dark: #7A7A7A;
 
     /* Neutral colors */
-    --text-primary: #f9fafb;
-    --text-secondary: #e5e7eb;
-    --text-muted: #9ca3af;
+    --text-primary: #E0E0E0;
+    --text-secondary: #B0B0B0;
+    --text-muted: #888888;
 
-    /* Success, warning, error states */
-    --success-color: #22c55e;
-    /* Green */
-    --success-light: #14532d;
-    --warning-color: #eab308;
-    /* Yellow */
-    --warning-light: #713f12;
-    --danger-color: #ef4444;
+    /* Status colors */
+    --success-color: #2ECC71;
+    /* Bright green */
+    --success-light: #68D391;
+    --warning-color: #FFB74D;
+    /* Amber */
+    --warning-light: #FFE082;
+    --danger-color: #E53935;
     /* Red */
-    --danger-light: #7f1d1d;
+    --danger-light: #FFCDD2;
 
     /* Background and surfaces */
-    --background-color: #111827;
-    --surface-color: #1f2937;
-    --card-background: #1f2937;
+    --background-color: #1F1F1F;
+    --surface-color: #2C2C2C;
+    --card-background: #2C2C2C;
 
     /* Border and dividers */
     --border-color: rgba(255, 255, 255, 0.1);
     --divider-color: rgba(255, 255, 255, 0.06);
 
     /* RGB Values for opacity operations in dark mode */
-    --primary-color-rgb: 59, 130, 246;
-    --secondary-color-rgb: 20, 184, 166;
-    --accent-color-rgb: 245, 158, 11;
-    --success-color-rgb: 34, 197, 94;
-    --warning-color-rgb: 234, 179, 8;
-    --danger-color-rgb: 239, 68, 68;
-    --background-color-rgb: 17, 24, 39;
+    --primary-color-rgb: 58, 120, 216;
+    /* from #3A78D8 */
+    --secondary-color-rgb: 107, 123, 140;
+    /* from #6B7B8C */
+    --accent-color-rgb: 168, 168, 168;
+    --success-color-rgb: 46, 204, 113;
+    /* from #2ECC71 */
+    --warning-color-rgb: 255, 183, 77;
+    /* from #FFB74D */
+    --danger-color-rgb: 229, 57, 53;
+    /* from #E53935 */
+    --background-color-rgb: 31, 31, 31;
+    /* from #1F1F1F */
 
     /* Effects - softer shadows for dark mode */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -134,17 +151,16 @@
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
 
     /* DataTables specific colors for dark mode */
-    --dt-header-bg: #2d3748;
-    --dt-header-text: #e5e7eb;
-    --dt-row-hover: rgba(59, 130, 246, 0.15);
-    --dt-stripe-bg: rgba(26, 32, 44, 0.5);
-    /* Darker contrast for stripes */
-    --dt-buttons-bg: #3b82f6;
-    --dt-buttons-text: #f9fafb;
-    --dt-pagination-bg: #2d3748;
-    --dt-pagination-text: #e5e7eb;
-    --dt-pagination-active-bg: #3b82f6;
-    --dt-pagination-active-text: #f9fafb;
+    --dt-header-bg: #353535;
+    --dt-header-text: #E0E0E0;
+    --dt-row-hover: rgba(58, 120, 216, 0.15);
+    --dt-stripe-bg: rgba(0, 0, 0, 0.1);
+    --dt-buttons-bg: #3A78D8;
+    --dt-buttons-text: #FFFFFF;
+    --dt-pagination-bg: #2C2C2C;
+    --dt-pagination-text: #E0E0E0;
+    --dt-pagination-active-bg: #3A78D8;
+    --dt-pagination-active-text: #FFFFFF;
 }
 
 /* Core styles */
@@ -421,7 +437,7 @@ footer,
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(var(--background-color-rgb, 255, 255, 255), 0.8);
+    background: rgba(var(--background-color-rgb), 0.8);
     z-index: 1000;
     border-radius: var(--border-radius);
     display: flex;

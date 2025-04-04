@@ -208,6 +208,7 @@ def get_summary_data():
 def export_report():
     """
     Export report data to CSV.
+    Supports detailed, summary, and template export formats.
 
     Returns:
         Response: CSV file download.
@@ -216,7 +217,9 @@ def export_report():
         # Get date filters and export type from request
         start_date_str = request.args.get("start_date", "")
         end_date_str = request.args.get("end_date", "")
-        export_type = request.args.get("type", "detail")  # 'detail' or 'summary'
+        export_type = request.args.get(
+            "type", "detail"
+        )  # 'detail', 'summary', or 'template'
 
         # Parse dates if provided
         if start_date_str and end_date_str:
@@ -280,7 +283,7 @@ def export_report():
             filename = (
                 f"fifo_cost_by_account_detail_{datetime.now().strftime('%Y%m%d')}.csv"
             )
-        else:
+        elif export_type == "summary":
             # Summary export - totals per account
             # Process the results to group by Account Number
             account_groups = {}
@@ -324,6 +327,69 @@ def export_report():
             filename = (
                 f"fifo_cost_by_account_summary_{datetime.now().strftime('%Y%m%d')}.csv"
             )
+        else:  # template export
+            # G/L Template export - formatted for G/L import
+            # Process the results to group by Account Number
+            account_groups = {}
+
+            # Process each row
+            for row in results:
+                # Skip rows with missing account numbers
+                if not row["ACCTNUM"]:
+                    continue
+
+                acct_num = row["ACCTNUM"]
+
+                # Create account group if it doesn't exist
+                if acct_num not in account_groups:
+                    account_groups[acct_num] = {"ACCTNUM": acct_num, "TOTAL_COST": 0}
+
+                # Add to group total
+                account_groups[acct_num]["TOTAL_COST"] += float(row["COST"] or 0)
+
+            # Write header row for template export
+            writer.writerow(
+                [
+                    "G/L Date",
+                    "G/L Account",
+                    "Amount",
+                    "Description",
+                    "Source",
+                    "Due To/Due From Fund",
+                    "Org",
+                    "Set",
+                    "ProjCode1",
+                    "ProjCode2",
+                    "PrjCode3",
+                    "Sub Ledger Type",
+                    "Sub Ledger Description",
+                ]
+            )
+
+            # Use the end date for all rows
+            gl_date = end_date.strftime("%m/%d/%Y")
+
+            # Write account rows
+            for acct_num, account in account_groups.items():
+                writer.writerow(
+                    [
+                        gl_date,  # G/L Date
+                        account["ACCTNUM"],  # G/L Account
+                        account["TOTAL_COST"],  # Amount
+                        "",  # Description
+                        "Cityworks",  # Source
+                        "",  # Due To/Due From Fund
+                        "",  # Org
+                        "",  # Set
+                        "",  # ProjCode1
+                        "",  # ProjCode2
+                        "",  # PrjCode3
+                        "",  # Sub Ledger Type
+                        "",  # Sub Ledger Description
+                    ]
+                )
+
+            filename = f"cityworks_gl_template_{end_date.strftime('%Y%m%d')}.csv"
 
         # Create response with CSV file
         output = si.getvalue()

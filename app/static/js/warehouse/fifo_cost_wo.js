@@ -55,6 +55,10 @@ $(document).ready(function () {
     $('#exportSummary').click(function () {
         exportReportData('summary');
     });
+    
+    $('#exportTemplate').click(function () {
+        exportReportData('template');
+    });
 
     /**
      * Load account data based on filters
