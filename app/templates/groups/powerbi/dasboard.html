@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item active">Power BI Reports</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-chart-bar"></i> {{ title }}</h1>
+        <p class="lead">Access your Power BI reports during the transition to Python-based reporting.</p>
+
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> These reports are embedded from Power BI. As we continue to develop
+            our Python-based reporting system, these reports will gradually be replaced with native dashboards.
+        </div>
+    </div>
+</div>
+
+<!-- Group reports by category -->
+{% for group_name, group_reports in grouped_reports.items() %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="h4 mb-3">{{ group_name }}</h2>
+    </div>
+</div>
+
+<div class="row">
+    {% for report in group_reports %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="{{ report.icon }}"></i> {{ report.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ report.description }}</p>
+            </div>
+            <div class="card-footer bg-light">
+                <a href="{{ url_for('powerbi.embed_report', report_id=report.id) }}" class="btn btn-outline-primary">
+                    View Report <i class="fas fa-external-link-alt"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+
+<!-- If no grouped reports, display flat list -->
+{% if not grouped_reports %}
+<div class="row">
+    {% for report in reports %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="{{ report.icon }}"></i> {{ report.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ report.description }}</p>
+            </div>
+            <div class="card-footer bg-light">
+                <a href="{{ url_for('powerbi.embed_report', report_id=report.id) }}" class="btn btn-outline-primary">
+                    View Report <i class="fas fa-external-link-alt"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

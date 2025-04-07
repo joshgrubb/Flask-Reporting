@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block styles %}
+<style>
+    /* Full height iframe for the Power BI report */
+    .report-container {
+        position: relative;
+        height: calc(100vh - 220px);
+        min-height: 600px;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+
+    .report-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    /* Loading indicator and error message styling */
+    .report-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(var(--background-color-rgb), 0.9);
+        z-index: 5;
+    }
+
+    .report-overlay.hidden {
+        display: none;
+    }
+
+    .loading-spinner {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 1rem;
+    }
+
+    .error-icon {
+        font-size: 3rem;
+        color: var(--danger-color);
+        margin-bottom: 1rem;
+    }
+
+    /* Report selector styling */
+    .report-selector {
+        margin-bottom: 1.5rem;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        margin-right: 0.25rem;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        border: 1px solid transparent;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .nav-tabs .nav-link:not(.active):hover {
+        background-color: var(--primary-light);
+        border-color: var(--primary-light);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('powerbi.index') }}">Power BI Reports</a></li>
+                <li class="breadcrumb-item active">{{ report.name }}</li>
+            </ol>
+        </nav>
+        <h1><i class="{{ report.icon }}"></i> {{ report.name }}</h1>
+        <p class="lead">{{ report.description }}</p>
+    </div>
+</div>
+
+<!-- Report Navigation Tabs -->
+<div class="row mb-3">
+    <div class="col">
+        <ul class="nav nav-tabs report-selector">
+            {% for r in reports %}
+            <li class="nav-item">
+                <a class="nav-link {% if r.id == report.id %}active{% endif %}"
+                    href="{{ url_for('powerbi.embed_report', report_id=r.id) }}">
+                    <i class="{{ r.icon }}"></i> {{ r.name }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Report Container -->
+<div class="row">
+    <div class="col">
+        <div class="report-container" id="reportContainer">
+            <!-- Loading Overlay -->
+            <div class="report-overlay" id="loadingOverlay">
+                <div class="spinner-border text-primary loading-spinner" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h3>Loading Report...</h3>
+                <p>Please wait while the Power BI report loads.</p>
+            </div>
+
+            <!-- Error Overlay (Initially Hidden) -->
+            <div class="report-overlay hidden" id="errorOverlay">
+                <i class="fas fa-exclamation-circle error-icon"></i>
+                <h3>Failed to Load Report</h3>
+                <p id="errorMessage">An error occurred while loading the Power BI report.</p>
+                <button class="btn btn-primary mt-3" id="retryButton">
+                    <i class="fas fa-sync-alt"></i> Retry
+                </button>
+            </div>
+
+            <!-- Power BI iframe -->
+            <iframe id="reportFrame" class="report-iframe" title="{{ report.name }}" src="{{ report.embed_url }}"
+                allowfullscreen onload="reportLoaded()" onerror="reportError()">
+            </iframe>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Report status tracking
+    let loadAttempts = 0;
+    const maxLoadAttempts = 3;
+
+    // Function to handle successful report loading
+    function reportLoaded() {
+        // Hide the loading overlay after a short delay to ensure report is fully rendered
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+
+            // Log the successful load to the server
+            logReportStatus('success');
+        }, 1000);
+    }
+
+    // Function to handle report loading errors
+    function reportError() {
+        loadAttempts++;
+
+        if (loadAttempts < maxLoadAttempts) {
+            // Retry loading the report
+            const reportFrame = document.getElementById('reportFrame');
+            reportFrame.src = reportFrame.src;
+        } else {
+            // Show error overlay after max attempts
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('errorOverlay').classList.remove('hidden');
+
+            // Log the error to the server
+            logReportStatus('error', 'Failed to load report after ' + maxLoadAttempts + ' attempts');
+        }
+    }
+
+    // Function to log report status to the server
+    function logReportStatus(status, message = '') {
+        fetch('/groups/powerbi/report-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                reportId: '{{ report.id }}',
+                status: status,
+                message: message
+            })
+        }).catch(error => {
+            console.error('Error logging report status:', error);
+        });
+    }
+
+    // Retry button handler
+    document.getElementById('retryButton').addEventListener('click', function () {
+        // Reset load attempts
+        loadAttempts = 0;
+
+        // Show loading overlay and hide error overlay
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        document.getElementById('errorOverlay').classList.add('hidden');
+
+        // Reload the iframe
+        const reportFrame = document.getElementById('reportFrame');
+        reportFrame.src = reportFrame.src;
+    });
+
+    // Add event listener for iframe load errors
+    document.getElementById('reportFrame').addEventListener('error', reportError);
+</script>
+{% endblock %}

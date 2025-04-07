@@ -42,19 +42,19 @@ def index():
             },
             # Additional groups can be added here
             {
+                "id": "powerbi",
+                "name": "Power BI Reports",
+                "description": "Access to embedded Power BI reports during transition",
+                "url": "/groups/powerbi/",
+                "icon": "fas fa-chart-bar",
+                "enabled": True,
+            },
+            {
                 "id": "finance",
                 "name": "Finance",
                 "description": "Financial reports and budget analysis",
                 "url": "/groups/finance/",
                 "icon": "fas fa-chart-line",
-                "enabled": False,  # Set to False if not yet implemented
-            },
-            {
-                "id": "hr",
-                "name": "Human Resources",
-                "description": "Employee and personnel management reports",
-                "url": "/groups/hr/",
-                "icon": "fas fa-users",
                 "enabled": False,  # Set to False if not yet implemented
             },
         ]

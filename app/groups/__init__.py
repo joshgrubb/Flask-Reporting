@@ -16,8 +16,11 @@ from app.groups import routes  # noqa
 # Import and register sub-blueprints
 from app.groups.utilities_billing import bp as utilities_billing_bp  # noqa
 from app.groups.warehouse import bp as warehouse_bp  # noqa
+from app.groups.powerbi import bp as powerbi_bp  # noqa  # Add this line
 
 # Register the group blueprints
 bp.register_blueprint(utilities_billing_bp)
 
 bp.register_blueprint(warehouse_bp)
+
+bp.register_blueprint(powerbi_bp)  # Add this line
