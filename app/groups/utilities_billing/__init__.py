@@ -41,3 +41,9 @@ from app.groups.utilities_billing.amount_billed_search import (
 )  # noqa
 
 bp.register_blueprint(amount_billed_search_bp)
+
+
+from app.groups.utilities_billing.trending import (
+    bp as trending_bp,
+)  # noqa
+bp.register_blueprint(trending_bp)

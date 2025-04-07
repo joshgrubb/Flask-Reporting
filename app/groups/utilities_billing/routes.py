@@ -52,7 +52,8 @@ def index():
                 "id": "utility_dashboard",
                 "name": "Utility Billing Dashboard",
                 "description": "Overview of utility billing metrics and KPIs",
-                "url": "/groups/utilities_billing/trending/",                
+                "url": "/groups/utilities_billing/trending/",
+                "icon": "fas fa-chart-line",
             },
             # Add more reports as they are implemented
         ]
