@@ -42,7 +42,8 @@
                 <p class="card-text">{{ report.description }}</p>
             </div>
             <div class="card-footer bg-light">
-                <a href="{{ url_for('powerbi.embed_report', report_id=report.id) }}" class="btn btn-outline-primary">
+                <a href="{{ url_for('groups.powerbi.embed_report', report_id=report.id) }}"
+                    class="btn btn-outline-primary">
                     View Report <i class="fas fa-external-link-alt"></i>
                 </a>
             </div>
@@ -67,7 +68,8 @@
                 <p class="card-text">{{ report.description }}</p>
             </div>
             <div class="card-footer bg-light">
-                <a href="{{ url_for('powerbi.embed_report', report_id=report.id) }}" class="btn btn-outline-primary">
+                <a href="{{ url_for('groups.powerbi.embed_report', report_id=report.id) }}"
+                    class="btn btn-outline-primary">
                     View Report <i class="fas fa-external-link-alt"></i>
                 </a>
             </div>
