@@ -48,6 +48,12 @@ def index():
                 "description": "Search for bill amounts in the system",
                 "url": "/groups/utilities_billing/amount_billed_search/",
             },
+            {
+                "id": "utility_dashboard",
+                "name": "Utility Billing Dashboard",
+                "description": "Overview of utility billing metrics and KPIs",
+                "url": "/groups/utilities_billing/trending/",                
+            },
             # Add more reports as they are implemented
         ]
 
