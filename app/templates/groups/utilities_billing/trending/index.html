@@ -51,29 +51,6 @@
         color: var(--danger-color);
         margin-bottom: 1rem;
     }
-
-    /* Report selector styling */
-    .report-selector {
-        margin-bottom: 1.5rem;
-    }
-
-    .nav-tabs .nav-link {
-        padding: 0.75rem 1rem;
-        margin-right: 0.25rem;
-        border-radius: var(--border-radius) var(--border-radius) 0 0;
-        border: 1px solid transparent;
-    }
-
-    .nav-tabs .nav-link.active {
-        background-color: var(--primary-color);
-        color: white;
-        border-color: var(--primary-color);
-    }
-
-    .nav-tabs .nav-link:not(.active):hover {
-        background-color: var(--primary-light);
-        border-color: var(--primary-light);
-    }
 </style>
 {% endblock %}
 
@@ -89,22 +66,10 @@
         </nav>
         <h1><i class="{{ report.icon }}"></i> {{ report.name }}</h1>
         <p class="lead">{{ report.description }}</p>
-    </div>
-</div>
-
-<!-- Report Navigation Tabs -->
-<div class="row mb-3">
-    <div class="col">
-        <ul class="nav nav-tabs report-selector">
-            {% for r in reports %}
-            <li class="nav-item">
-                <a class="nav-link {% if r.id == report.id %}active{% endif %}"
-                    href="{{ url_for('groups.powerbi.embed_report', report_id=r.id) }}">
-                    <i class="{{ r.icon }}"></i> {{ r.name }}
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> This report is currently embedded from Power BI and will be migrated to a
+            native Python-based report in the future.
+        </div>
     </div>
 </div>
 
@@ -151,9 +116,6 @@
         // Hide the loading overlay after a short delay to ensure report is fully rendered
         setTimeout(() => {
             document.getElementById('loadingOverlay').classList.add('hidden');
-
-            // Log the successful load to the server
-            logReportStatus('success');
         }, 1000);
     }
 
@@ -169,27 +131,7 @@
             // Show error overlay after max attempts
             document.getElementById('loadingOverlay').classList.add('hidden');
             document.getElementById('errorOverlay').classList.remove('hidden');
-
-            // Log the error to the server
-            logReportStatus('error', 'Failed to load report after ' + maxLoadAttempts + ' attempts');
         }
-    }
-
-    // Function to log report status to the server
-    function logReportStatus(status, message = '') {
-        fetch('/groups/powerbi/report-status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                reportId: '{{ report.id }}',
-                status: status,
-                message: message
-            })
-        }).catch(error => {
-            console.error('Error logging report status:', error);
-        });
     }
 
     // Retry button handler

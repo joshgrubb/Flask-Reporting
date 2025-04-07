@@ -29,31 +29,35 @@ def index():
                 "name": "New Customer Accounts",
                 "description": "Report showing new customer account information",
                 "url": "/groups/utilities_billing/new_customer_accounts/",
+                "icon": "fas fa-user-plus",
             },
             {
                 "id": "no_occupant_list_for_moveouts",
                 "name": "No Occupant List for Moveouts",
                 "description": "Report showing addresses with moveouts that have no new occupants",
                 "url": "/groups/utilities_billing/no_occupant_list_for_moveouts/",
+                "icon": "fa-solid fa-building-circle-arrow-right",
             },
             {
                 "id": "accounts_no_garbage",
                 "name": "Accounts Without Garbage Service",
                 "description": "Report showing residential accounts without garbage service",
                 "url": "/groups/utilities_billing/accounts_no_garbage/",
+                "icon": "fa-solid fa-trash",
             },
             {
                 "id": "amount_billed_search",
                 "name": "Amount Billed Search",
                 "description": "Search for bill amounts in the system",
                 "url": "/groups/utilities_billing/amount_billed_search/",
+                "icon": "fas fa-search-dollar",
             },
             {
                 "id": "utility_dashboard",
                 "name": "Utility Billing Dashboard",
                 "description": "Overview of utility billing metrics and KPIs",
                 "url": "/groups/utilities_billing/trending/",
-                "icon": "fas fa-chart-line",
+                "icon": "fa-solid fa-chart-column",
             },
             # Add more reports as they are implemented
         ]
