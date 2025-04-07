@@ -685,3 +685,20 @@ if (typeof $ !== 'undefined') {
         }, 100);
     });
 }
+
+// Create a custom event for dark mode changes
+const darkModeChangedEvent = new Event('darkModeChanged');
+
+// Modify your existing dark mode toggle functionality
+function toggleDarkMode(e) {
+    e.preventDefault();
+
+    if (isDarkMode) {
+        enableLightMode();
+    } else {
+        enableDarkMode();
+    }
+
+    // Dispatch the custom event
+    document.dispatchEvent(darkModeChangedEvent);
+}
