@@ -6,23 +6,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
         content="Clayton DataForge - {% block meta_description %}Modern reporting dashboard{% endblock %}">
-    <meta name="theme-color" content="#4361ee">
+    <meta name="theme-color" content="#4361ee" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1F1F1F" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="light dark">
     <title>{% block title %}Clayton DataForge{% endblock %}</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/ico" href="{{ url_for('static', filename='img/DataForgeHammer.ico') }}">
 
-    <!-- Fonts -->
+    <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
     <!-- Core CDN resources (Bootstrap, jQuery, Font Awesome) -->
     {{ include_cdn(bundles=["core"]) }}
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Non-critical CSS loaded asynchronously -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" media="print"
+        onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    </noscript>
 
     <!-- Page-specific styles -->
     {% block styles %}{% endblock %}
@@ -35,69 +45,73 @@
 </head>
 
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="/">
-                <img src="{{ url_for('static', filename='img/DataForgeHammer.ico') }}" alt="Logo" width="30" height="30"
-                    class="me-2">
-                Clayton DataForge
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Home">
-                            <i class="fas fa-home"></i> Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/groups/" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                            title="View all reports">
-                            <i class="fas fa-chart-line"></i> Groups
-                        </a>
-                    </li>
-
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="refresh-page" data-bs-toggle="tooltip"
-                            data-bs-placement="bottom" title="Refresh page">
-                            <i class="fas fa-sync-alt"></i>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="toggle-theme" data-bs-toggle="tooltip"
-                            data-bs-placement="bottom" title="Toggle dark mode">
-                            <i class="fas fa-moon"></i>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
     <!-- Page loader animation -->
-    <div id="page-loader">
+    <div id="page-loader" aria-hidden="true">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
 
+    <!-- Navigation -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark sticky-top" aria-label="Main navigation">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                    <img src="{{ url_for('static', filename='img/DataForgeHammer.ico') }}" alt="Logo" width="30"
+                        height="30" class="me-2">
+                    <span>Clayton DataForge</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                title="Home">
+                                <i class="fas fa-home" aria-hidden="true"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/groups/" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                title="View all reports">
+                                <i class="fas fa-chart-line" aria-hidden="true"></i> Groups
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="refresh-page" data-bs-toggle="tooltip"
+                                data-bs-placement="bottom" title="Refresh page">
+                                <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                                <span class="visually-hidden">Refresh page</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="toggle-theme" data-bs-toggle="tooltip"
+                                data-bs-placement="bottom" title="Toggle dark mode" aria-label="Toggle dark mode">
+                                <i class="fas fa-moon" aria-hidden="true"></i>
+                                <span class="visually-hidden">Toggle dark mode</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
     <!-- Main Content -->
-    <main class="container mt-4">
+    <main class="container mt-4" id="main-content">
         <!-- Alert container for dynamically created alerts -->
-        <div id="alert-container">
+        <div id="alert-container" role="alert" aria-live="polite">
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             {% for category, message in messages %}
             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                 <div class="d-flex align-items-center">
-                    <i
-                        class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% elif category == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% elif category == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"
+                        aria-hidden="true"></i>
                     <div>{{ message }}</div>
                     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -112,16 +126,17 @@
 
     <!-- Back to top button -->
     <button id="back-to-top" class="btn rounded-circle" aria-label="Back to top">
-        <i class="fas fa-arrow-up"></i>
+        <i class="fas fa-arrow-up" aria-hidden="true"></i>
+        <span class="visually-hidden">Back to top</span>
     </button>
 
     <!-- Footer -->
-    <footer class="py-4 mt-5">
+    <footer class="footer">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
                     <p class="mb-0">
-                        &copy; <span data-current-year>2023</span> Clayton DataForge Application
+                        &copy; <span data-current-year>2025</span> Clayton DataForge Application
                     </p>
                 </div>
                 <div class="col-md-6 text-center text-md-end">
@@ -133,11 +148,33 @@
         </div>
     </footer>
 
-    <!-- Chart.js Theme Helper -->
-    <script src="{{ url_for('static', filename='js/chart-theme-helper.js') }}"></script>
+    <!-- Critical JavaScript inline -->
+    <script>
+        // Detect system preference for dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark-mode');
+        }
 
-    <!-- Main application JavaScript -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+        // Ensure footer is at bottom with JS fallback
+        function adjustFooter() {
+            const mainHeight = document.getElementById('main-content').offsetHeight;
+            const windowHeight = window.innerHeight;
+            const footerHeight = document.querySelector('footer').offsetHeight;
+            const navHeight = document.querySelector('header').offsetHeight;
+
+            if (mainHeight + footerHeight + navHeight < windowHeight) {
+                document.getElementById('main-content').style.minHeight =
+                    (windowHeight - footerHeight - navHeight) + 'px';
+            }
+        }
+
+        window.addEventListener('load', adjustFooter);
+        window.addEventListener('resize', adjustFooter);
+    </script>
+
+    <!-- Lazy load non-critical JavaScript -->
+    <script defer src="{{ url_for('static', filename='js/chart-theme-helper.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     <!-- Page-specific scripts -->
     {% block scripts %}{% endblock %}

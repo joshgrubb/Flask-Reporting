@@ -808,3 +808,37 @@ footer .text-muted {
         margin-bottom: 0.5rem;
     }
 }
+/* Footer Styling - Add this to your style.css file */
+
+/* Create a flex container that takes up minimum of full viewport height */
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* Use viewport height units */
+}
+
+/* Main content should grow to push footer down */
+main.container {
+    flex: 1 0 auto;
+    /* grow, don't shrink, and use height: auto */
+    padding-bottom: 2rem;
+    /* Add some space between content and footer */
+}
+
+/* Footer should not grow or shrink */
+footer {
+    flex-shrink: 0;
+    width: 100%;
+    padding: 1.5rem 0;
+    margin-top: 0;
+    /* Remove the top margin that's pushing the footer down */
+    background-color: var(--surface-color);
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+}
