@@ -5,19 +5,7 @@
 {% endblock %}
 
 {% block styles %}
-<style>
-    .chart-container {
-        margin-top: 20px;
-    }
 
-    .filter-section {
-        background-color: var(--card-background);
-        border-radius: var(--border-radius);
-        padding: 1rem;
-        margin-bottom: 1rem;
-        box-shadow: var(--shadow-sm);
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -78,4 +66,20 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
+<script>
+    // Assume 'chart' is the id of the div where the Plotly chart is rendered.
+    function updateChartTheme() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const newTemplate = isDarkMode ? 'plotly_dark' : 'plotly_white';
+        // Use Plotly.update to change the chart layout template
+        Plotly.relayout('chart', { template: newTemplate });
+    }
+
+    // This could be triggered on a button click or through an event listener that detects theme changes.
+    document.getElementById('themeToggle').addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        updateChartTheme();
+    });
+</script>

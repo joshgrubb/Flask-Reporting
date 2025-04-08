@@ -334,15 +334,43 @@ def amended_budget_chart():
         go.Scatter(
             x=fiscal_years,
             y=amended_totals,
-            mode="lines+markers",
+            mode="lines",
             name="Amended Budget",
+            marker=dict(
+                size=10,  # Make markers larger
+                symbol="circle",  # Choose a symbol that is easy to interpret
+                color="#0D3B66",  # Use a pleasant, contrasting color
+            ),
+            line=dict(
+                width=3,  # Increase the line width
+                dash="solid",  # Consider using a dash style for variety
+                color="#0D3B66",  # Consistent line color matching markers
+            ),
+            hovertemplate="%{x}: $%{y:,.0f}<extra></extra>",  # Custom hover text
         )
     )
+
     fig.update_layout(
         title="Amended Budget Total by Fiscal Year",
         xaxis_title="Fiscal Year",
         yaxis_title="Amended Budget Total ($)",
-        template="plotly_white",
+        template="plotly_dark",  # Or another template
+        paper_bgcolor="rgba(0,0,0,0)",  # Transparent or custom paper background
+        plot_bgcolor="rgba(0,0,0,0)",  # Light gray for a soft contrast
+        font=dict(family="Roboto, sans-serif", size=14, color="#333"),
+    )
+
+    fig.update_xaxes(
+        rangeslider_visible=True,
+        rangeselector=dict(
+            buttons=list(
+                [
+                    dict(count=5, label="5Y", step="year", stepmode="backward"),
+                    dict(count=10, label="10Y", step="year", stepmode="backward"),
+                    dict(step="all"),
+                ]
+            )
+        ),
     )
 
     chart_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
