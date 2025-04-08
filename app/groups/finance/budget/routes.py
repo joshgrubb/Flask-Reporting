@@ -9,6 +9,7 @@ import logging
 import json
 from datetime import datetime
 from flask import render_template, request, jsonify
+import plotly.graph_objects as go
 
 from app.core.database import execute_query
 from app.groups.finance.budget import bp
@@ -18,6 +19,7 @@ from app.groups.finance.budget.queries import (
     get_budget_summary,
     get_monthly_trend,
     get_budget_transactions,
+    get_amended_budget_by_fiscal_year,
 )
 
 # Configure logger
@@ -302,3 +304,68 @@ def export_data():
     except Exception as e:
         logger.error("Error exporting budget data: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route("/amended-budget-chart")
+def amended_budget_chart():
+    """
+    Render a page with a Python Plotly line chart showing the amended budget total
+    by fiscal year. Filters include fiscal year and department.
+    """
+    # Retrieve optional filter parameters; empty means "All"
+    selected_fiscal_year = request.args.get("fiscal_year", None)
+    selected_department = request.args.get("department", None)
+
+    # Fetch amended budget data
+    query, params, db_key = get_amended_budget_by_fiscal_year(
+        selected_fiscal_year, selected_department
+    )
+    data = execute_query(query, params, db_key=db_key)
+
+    # Process the returned data into lists for the chart
+    fiscal_years = [row["Fiscal_Year"] for row in data]
+    amended_totals = [row["AmendedBudget"] for row in data]
+
+    # Create the Plotly line chart
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=fiscal_years,
+            y=amended_totals,
+            mode="lines+markers",
+            name="Amended Budget",
+        )
+    )
+    fig.update_layout(
+        title="Amended Budget Total by Fiscal Year",
+        xaxis_title="Fiscal Year",
+        yaxis_title="Amended Budget Total ($)",
+        template="plotly_white",
+    )
+
+    chart_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
+
+    # Populate fiscal year filter options (you already have this working)
+    years_query, years_params, years_db_key = get_fiscal_years()
+    fiscal_years_filter = execute_query(years_query, years_params, db_key=years_db_key)
+
+    # Update the query for department filter to use the correct view/column name
+    departments_query = """
+        SELECT DISTINCT GL_Level_2_Description AS Department 
+        FROM vwGL_GLAccount_Full_View 
+        ORDER BY GL_Level_2_Description
+    """
+    departments_filter = execute_query(departments_query, (), db_key="nws")
+
+    # Render the template with the chart and filters
+    return render_template(
+        "groups/finance/budget/index.html",
+        title="Amended Budget Chart",
+        chart_html=chart_html,
+        fiscal_years=fiscal_years_filter,
+        departments=departments_filter,
+        selected_fiscal_year=selected_fiscal_year,
+        selected_department=selected_department,
+    )

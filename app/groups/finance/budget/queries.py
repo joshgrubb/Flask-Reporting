@@ -497,3 +497,49 @@ def get_budget_transactions(fiscal_year=None, gl_account=None):
 
     logger.info("Fetching budget transactions with parameters: %s", params)
     return query, tuple(params), "nws"
+
+
+def get_amended_budget_by_fiscal_year(fiscal_year=None, department=None):
+    """
+    Get amended budget totals grouped by fiscal year.
+    The amended budget is assumed to be the sum of Budget and Amendments.
+
+    Args:
+        fiscal_year (str, optional): A specific fiscal year to filter by.
+        department (str, optional): A specific department to filter by.
+
+    Returns:
+        tuple: (SQL query string, query parameters, database key)
+    """
+    where_clauses = []
+    params = []
+
+    if fiscal_year:
+        where_clauses.append("JD.FiscalEndYear = ?")
+        params.append(fiscal_year)
+
+    if department:
+        # Filter based on the department as defined in your budget summary query.
+        where_clauses.append("fv.GL_Level_2_Description = ?")
+        params.append(department)
+
+    where_sql = ""
+    if where_clauses:
+        # Prepend "AND" since our WHERE clause already includes mandatory conditions.
+        where_sql = " AND " + " AND ".join(where_clauses)
+
+    query = f"""
+    SELECT JD.FiscalEndYear AS Fiscal_Year,
+           SUM(
+               CASE WHEN JH.JournalType = 3 THEN Amount ELSE 0 END +
+               CASE WHEN JH.JournalType = 4 THEN Amount ELSE 0 END
+           ) AS AmendedBudget
+    FROM dbo.JournalHeader JH
+    INNER JOIN dbo.JournalDetail JD ON JH.JournalID = JD.JournalID
+    LEFT JOIN vwGL_GLAccount_Full_View fv ON fv.GL_Account_ID = JD.GLAccountID
+    WHERE JH.ProcessStatus = 2 AND JD.GLDate IS NOT NULL
+    {where_sql}
+    GROUP BY JD.FiscalEndYear
+    ORDER BY JD.FiscalEndYear
+    """
+    return query, tuple(params), "nws"
