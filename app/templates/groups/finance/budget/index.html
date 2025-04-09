@@ -5,12 +5,43 @@
 {% endblock %}
 
 {% block styles %}
+<style>
+    .chart-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 400px;
+        width: 100%;
+    }
 
+    .chart-container {
+        position: relative;
+        height: 600px;
+        width: 100%;
+    }
+
+    /* Error message styling */
+    .chart-error {
+        padding: 20px;
+        background-color: var(--danger-light);
+        color: var(--danger-color);
+        border-radius: 8px;
+        margin-top: 20px;
+        display: none;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/finance/">Finance</a></li>
+                <li class="breadcrumb-item active">Budget Dashboard</li>
+            </ol>
+        </nav>
         <h1>{{ title }}</h1>
     </div>
 </div>
@@ -18,41 +49,48 @@
 <!-- Filters Section -->
 <div class="row mb-4">
     <div class="col">
-        <div class="filter-section">
-            <form method="get" action="{{ url_for('groups.finance.budget.amended_budget_chart') }}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label for="fiscalYearSelect" class="form-label">Fiscal Year</label>
-                        <select class="form-select" id="fiscalYearSelect" name="fiscal_year">
-                            <option value="">All Years</option>
-                            {% for year in fiscal_years %}
-                            <option value="{{ year.Fiscal_Year }}" {% if selected_fiscal_year==year.Fiscal_Year
-                                %}selected{% endif %}>
-                                {{ year.Fiscal_Year }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="departmentSelect" class="form-label">Department</label>
-                        <select class="form-select" id="departmentSelect" name="department">
-                            <option value="">All Departments</option>
-                            {% for dept in departments %}
-                            <option value="{{ dept.Department }}" {% if selected_department==dept.Department
-                                %}selected{% endif %}>
-                                {{ dept.Department }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <form id="filterForm">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="fiscalYearSelect" class="form-label">Fiscal Year</label>
+                            <select class="form-select" id="fiscalYearSelect" name="fiscal_year">
+                                <option value="">All Years</option>
+                                {% for year in fiscal_years %}
+                                <option value="{{ year.Fiscal_Year }}" {% if selected_fiscal_year==year.Fiscal_Year
+                                    %}selected{% endif %}>
+                                    {{ year.Fiscal_Year }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="departmentSelect" class="form-label">Department</label>
+                            <select class="form-select" id="departmentSelect" name="department">
+                                <option value="">All Departments</option>
+                                {% for dept in departments %}
+                                {% if dept.Department and dept.Department != 'None' %}
+                                <option value="{{ dept.Department }}" {% if selected_department==dept.Department
+                                    %}selected{% endif %}>
+                                    {{ dept.Department }}
+                                </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-filter"></i> Apply Filters
-                        </button>
+                        <div class="col-md-4">
+                            <button type="button" id="applyFilters" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -60,26 +98,200 @@
 <!-- Chart Section -->
 <div class="row">
     <div class="col">
-        <div class="chart-container">
-            <!-- Embed the Python-generated Plotly chart -->
-            {{ chart_html | safe }}
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Amended Budget by Fiscal Year</h5>
+            </div>
+            <div class="card-body">
+                <!-- Loading indicator -->
+                <div id="chartLoading" class="chart-loading">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="mt-3">Loading chart data...</div>
+                    </div>
+                </div>
+
+                <!-- Chart container -->
+                <div id="chartContainer" class="chart-container" style="display: none;"></div>
+
+                <!-- Error message container -->
+                <div id="chartError" class="chart-error">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="errorMessage">Error loading chart data.</span>
+                    <button id="retryButton" class="btn btn-outline-danger btn-sm ms-3">Retry</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
+
+{% block scripts %}
+<!-- Include Plotly from CDN - only load it when needed -->
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js" defer></script>
+
 <script>
-    // Assume 'chart' is the id of the div where the Plotly chart is rendered.
-    function updateChartTheme() {
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        const newTemplate = isDarkMode ? 'plotly_dark' : 'plotly_white';
-        // Use Plotly.update to change the chart layout template
-        Plotly.relayout('chart', { template: newTemplate });
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load chart when page is ready
+        loadChartData();
+
+        // Filter button event handler
+        document.getElementById('applyFilters').addEventListener('click', function () {
+            loadChartData();
+        });
+
+        // Retry button event handler
+        document.getElementById('retryButton').addEventListener('click', function () {
+            document.getElementById('chartError').style.display = 'none';
+            loadChartData();
+        });
+
+        // Adjust chart on window resize
+        window.addEventListener('resize', function () {
+            const chartDiv = document.getElementById('chartContainer');
+            if (chartDiv && chartDiv.innerHTML && window.Plotly) {
+                Plotly.Plots.resize(chartDiv);
+            }
+        });
+
+        // Listen for dark mode changes if available
+        if (typeof window.darkModeManager !== 'undefined') {
+            // Create custom event for dark mode changes
+            const darkModeEvent = new CustomEvent('darkModeChanged');
+
+            // Listen for dark mode toggles
+            document.getElementById('toggle-theme')?.addEventListener('click', function () {
+                // Give the DOM time to update
+                setTimeout(() => {
+                    document.dispatchEvent(darkModeEvent);
+                }, 100);
+            });
+        }
+
+        // Listen for the custom dark mode event
+        document.addEventListener('darkModeChanged', updateChartTheme);
+    });
+
+    /**
+     * Load chart data via AJAX
+     */
+    function loadChartData() {
+        // Show loading, hide chart and error
+        document.getElementById('chartLoading').style.display = 'flex';
+        document.getElementById('chartContainer').style.display = 'none';
+        document.getElementById('chartError').style.display = 'none';
+
+        // Get filter values
+        const fiscalYear = document.getElementById('fiscalYearSelect').value;
+        const department = document.getElementById('departmentSelect').value;
+
+        // Build query string with proper handling of empty values
+        let queryParams = [];
+        if (fiscalYear && fiscalYear !== '') {
+            queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
+        }
+        if (department && department !== '') {
+            queryParams.push('department=' + encodeURIComponent(department));
+        }
+
+        // Add timestamp to prevent caching
+        queryParams.push('_t=' + new Date().getTime());
+
+        // Build URL
+        const url = '/groups/finance/budget/api/chart-data?' + queryParams.join('&');
+
+        // Fetch the data
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Check if we have data
+                    if (data.fiscal_years && data.fiscal_years.length > 0) {
+                        // Render the chart
+                        document.getElementById('chartContainer').innerHTML = data.chart_html;
+
+                        // Show chart, hide loading
+                        document.getElementById('chartLoading').style.display = 'none';
+                        document.getElementById('chartContainer').style.display = 'block';
+
+                        // Delay theme update to ensure chart is fully rendered
+                        setTimeout(() => {
+                            updateChartTheme();
+                        }, 500);
+                    } else {
+                        // No data to display
+                        document.getElementById('chartLoading').style.display = 'none';
+                        document.getElementById('chartError').style.display = 'block';
+                        document.getElementById('errorMessage').textContent =
+                            'No budget data available for the selected filters. Try different criteria.';
+                    }
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+
+                // Show error message
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('chartError').style.display = 'block';
+                document.getElementById('chartLoading').style.display = 'none';
+            });
     }
 
-    // This could be triggered on a button click or through an event listener that detects theme changes.
-    document.getElementById('themeToggle').addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        updateChartTheme();
-    });
+    /**
+     * Update chart theme based on dark/light mode
+     */
+    function updateChartTheme() {
+        // First check if Plotly is fully loaded
+        if (typeof window.Plotly === 'undefined') {
+            console.warn('Plotly not yet loaded, skipping theme update');
+            return;
+        }
+
+        // Then check if the chart container exists and has content
+        const chartContainer = document.getElementById('chartContainer');
+        if (!chartContainer || !chartContainer.innerHTML.trim()) {
+            console.warn('Chart container empty, skipping theme update');
+            return;
+        }
+
+        // Find the actual plot element inside the container
+        const plotElement = chartContainer.querySelector('.js-plotly-plot');
+        if (!plotElement) {
+            console.warn('Plot element not found in container, skipping theme update');
+            return;
+        }
+
+        // Now try to update the theme with proper error handling
+        try {
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+
+            const newLayout = {
+                template: isDarkMode ? 'plotly_dark' : 'plotly_white',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: {
+                    color: isDarkMode ? '#E0E0E0' : '#333333'
+                }
+            };
+
+            // Check if Plotly.relayout is actually available
+            if (typeof Plotly.relayout === 'function') {
+                Plotly.relayout(plotElement, newLayout);
+            } else {
+                console.warn('Plotly.relayout function not available');
+            }
+        } catch (e) {
+            console.warn('Error updating chart theme:', e);
+        }
+    }
 </script>
+{% endblock %}

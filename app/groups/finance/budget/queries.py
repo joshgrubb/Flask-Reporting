@@ -501,8 +501,8 @@ def get_budget_transactions(fiscal_year=None, gl_account=None):
 
 def get_amended_budget_by_fiscal_year(fiscal_year=None, department=None):
     """
-    Get amended budget totals grouped by fiscal year.
-    The amended budget is assumed to be the sum of Budget and Amendments.
+    Get amended budget totals grouped by fiscal year with optimizations.
+    Only selects necessary columns and uses better filtering.
 
     Args:
         fiscal_year (str, optional): A specific fiscal year to filter by.
@@ -514,12 +514,12 @@ def get_amended_budget_by_fiscal_year(fiscal_year=None, department=None):
     where_clauses = []
     params = []
 
-    if fiscal_year:
+    # Ensure only valid parameters are included
+    if fiscal_year and str(fiscal_year).lower() not in ("none", ""):
         where_clauses.append("JD.FiscalEndYear = ?")
         params.append(fiscal_year)
 
-    if department:
-        # Filter based on the department as defined in your budget summary query.
+    if department and str(department).lower() not in ("none", ""):
         where_clauses.append("fv.GL_Level_2_Description = ?")
         params.append(department)
 
@@ -528,18 +528,21 @@ def get_amended_budget_by_fiscal_year(fiscal_year=None, department=None):
         # Prepend "AND" since our WHERE clause already includes mandatory conditions.
         where_sql = " AND " + " AND ".join(where_clauses)
 
+    # Optimized query with NOLOCK hint to improve performance
     query = f"""
     SELECT JD.FiscalEndYear AS Fiscal_Year,
            SUM(
                CASE WHEN JH.JournalType = 3 THEN Amount ELSE 0 END +
                CASE WHEN JH.JournalType = 4 THEN Amount ELSE 0 END
            ) AS AmendedBudget
-    FROM dbo.JournalHeader JH
-    INNER JOIN dbo.JournalDetail JD ON JH.JournalID = JD.JournalID
-    LEFT JOIN vwGL_GLAccount_Full_View fv ON fv.GL_Account_ID = JD.GLAccountID
+    FROM dbo.JournalHeader JH WITH (NOLOCK)
+    INNER JOIN dbo.JournalDetail JD WITH (NOLOCK) ON JH.JournalID = JD.JournalID
+    LEFT JOIN vwGL_GLAccount_Full_View fv WITH (NOLOCK) ON fv.GL_Account_ID = JD.GLAccountID
     WHERE JH.ProcessStatus = 2 AND JD.GLDate IS NOT NULL
     {where_sql}
     GROUP BY JD.FiscalEndYear
     ORDER BY JD.FiscalEndYear
     """
+
+    logger.debug("Executing query with params: %s", params)
     return query, tuple(params), "nws"

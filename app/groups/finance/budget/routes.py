@@ -8,7 +8,7 @@ This module defines routes for the Budget dashboard.
 import logging
 import json
 from datetime import datetime
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, Response
 import plotly.graph_objects as go
 
 from app.core.database import execute_query
@@ -26,56 +26,160 @@ from app.groups.finance.budget.queries import (
 logger = logging.getLogger(__name__)
 
 
+# Main route - just renders the page with filters, no chart generation
 @bp.route("/")
 def index():
     """
-    Render the Budget dashboard.
-
-    Returns:
-        str: Rendered HTML template.
+    Render the Budget dashboard with minimal initial data.
     """
     try:
         # Get available fiscal years for filters
         years_query, years_params, years_db_key = get_fiscal_years()
-        fiscal_years = execute_query(years_query, years_params, db_key=years_db_key)
-
-        # Get available fund categories for filters
-        funds_query, funds_params, funds_db_key = get_fund_categories()
-        fund_categories = execute_query(funds_query, funds_params, db_key=funds_db_key)
-
-        # Default fiscal year (most recent)
-        default_fiscal_year = fiscal_years[0]["Fiscal_Year"] if fiscal_years else None
-
-        # Get initial data
-        budget_query, budget_params, budget_db_key = get_budget_summary(
-            fiscal_year=default_fiscal_year
+        fiscal_years_filter = execute_query(
+            years_query, years_params, db_key=years_db_key
         )
-        budget_data = execute_query(budget_query, budget_params, db_key=budget_db_key)
 
-        # Get monthly trend data
-        trend_query, trend_params, trend_db_key = get_monthly_trend(
-            fiscal_year=default_fiscal_year
-        )
-        trend_data = execute_query(trend_query, trend_params, db_key=trend_db_key)
+        # Get department filter options and filter out None values
+        departments_query = """
+            SELECT DISTINCT GL_Level_2_Description AS Department 
+            FROM vwGL_GLAccount_Full_View 
+            WHERE GL_Level_2_Description IS NOT NULL
+              AND GL_Level_2_Description <> ''
+              AND GL_Level_2_Description <> 'None'
+            ORDER BY GL_Level_2_Description
+        """
+        departments_filter = execute_query(departments_query, (), db_key="nws")
 
-        # Prepare data for charts
-        budget_summary_chart_data = prepare_budget_summary_chart_data(budget_data)
-        monthly_trend_chart_data = prepare_monthly_trend_chart_data(trend_data)
+        # Get selected filter values from request
+        selected_fiscal_year = request.args.get("fiscal_year", "")
+        selected_department = request.args.get("department", "")
+
+        # Validate the selected values
+        if selected_fiscal_year and selected_fiscal_year.lower() == "none":
+            selected_fiscal_year = ""
+
+        if selected_department and selected_department.lower() == "none":
+            selected_department = ""
 
         return render_template(
             "groups/finance/budget/index.html",
             title="Budget Dashboard",
-            fiscal_years=fiscal_years,
-            fund_categories=fund_categories,
-            default_fiscal_year=default_fiscal_year,
-            budget_data=budget_data,
-            budget_summary_chart_data=json.dumps(budget_summary_chart_data),
-            monthly_trend_chart_data=json.dumps(monthly_trend_chart_data),
+            fiscal_years=fiscal_years_filter,
+            departments=departments_filter,
+            selected_fiscal_year=selected_fiscal_year,
+            selected_department=selected_department,
         )
 
     except Exception as e:
         logger.error("Error rendering Budget dashboard: %s", str(e))
         return render_template("error.html", error=str(e))
+
+
+@bp.route("/api/chart-data")
+def api_chart_data():
+    """
+    API endpoint for fetching amended budget chart data.
+    """
+    try:
+        # Retrieve filter parameters
+        selected_fiscal_year = request.args.get("fiscal_year", "")
+        selected_department = request.args.get("department", "")
+
+        # Clean parameters - ensure empty strings become None
+        if not selected_fiscal_year or selected_fiscal_year.lower() in ("none", ""):
+            selected_fiscal_year = None
+
+        if not selected_department or selected_department.lower() in ("none", ""):
+            selected_department = None
+
+        # Log the parameters for debugging
+        logger.debug(
+            "API Chart Data parameters - fiscal_year: %s, department: %s",
+            selected_fiscal_year,
+            selected_department,
+        )
+
+        # Fetch amended budget data
+        query, params, db_key = get_amended_budget_by_fiscal_year(
+            selected_fiscal_year, selected_department
+        )
+        data = execute_query(query, params, db_key=db_key)
+
+        # Check if we have any data
+        if not data:
+            return jsonify(
+                {
+                    "success": True,
+                    "fiscal_years": [],
+                    "amended_totals": [],
+                    "chart_html": "<div class='text-center p-5'>No data available for the selected filters.</div>",
+                }
+            )
+
+        # Process the returned data into lists for the chart
+        fiscal_years = [str(row["Fiscal_Year"]) for row in data]  # Ensure strings
+        amended_totals = [float(row["AmendedBudget"]) for row in data]
+
+        # Create the Plotly figure
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=fiscal_years,
+                y=amended_totals,
+                mode="lines+markers",
+                name="Amended Budget",
+                marker=dict(
+                    size=10,
+                    symbol="circle",
+                    color="#0D3B66",
+                ),
+                line=dict(
+                    width=3,
+                    dash="solid",
+                    color="#0D3B66",
+                ),
+                hovertemplate="%{x}: $%{y:,.0f}<extra></extra>",
+            )
+        )
+
+        fig.update_layout(
+            title="Amended Budget Total by Fiscal Year",
+            xaxis_title="Fiscal Year",
+            yaxis_title="Amended Budget Total ($)",
+            template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Roboto, sans-serif", size=14, color="#333"),
+        )
+
+        fig.update_xaxes(
+            rangeslider_visible=True,
+            rangeselector=dict(
+                buttons=list(
+                    [
+                        dict(count=5, label="5Y", step="year", stepmode="backward"),
+                        dict(count=10, label="10Y", step="year", stepmode="backward"),
+                        dict(step="all"),
+                    ]
+                )
+            ),
+        )
+
+        # Generate HTML
+        chart_html = fig.to_html(full_html=False, include_plotlyjs=False)
+
+        return jsonify(
+            {
+                "success": True,
+                "chart_html": chart_html,
+                "fiscal_years": fiscal_years,
+                "amended_totals": amended_totals,
+            }
+        )
+
+    except Exception as e:
+        logger.error("Error generating chart data: %s", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @bp.route("/api/budget-summary")
