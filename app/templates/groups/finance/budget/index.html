@@ -4,6 +4,10 @@
 {{ title }}
 {% endblock %}
 
+{% block cdn_resources %}
+{{ include_cdn(bundles=["core", "chartjs", "datepicker"]) }}
+{% endblock %}
+
 {% block styles %}
 <style>
     .chart-loading {
@@ -29,6 +33,43 @@
         margin-top: 20px;
         display: none;
     }
+
+    /* Summary stats card styling */
+    .stats-card {
+        transition: all 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Dark mode specific styles */
+    .dark-mode .stats-card {
+        background-color: var(--card-background);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    .dark-mode .stats-card h2 {
+        color: var(--primary-color);
+    }
+
+    .dark-mode .stats-card .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .dark-mode .form-select,
+    .dark-mode .form-control {
+        background-color: var(--surface-color);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    /* Fix for card headers in dark mode */
+    .dark-mode .card-header.bg-primary {
+        background-color: var(--primary-color) !important;
+    }
 </style>
 {% endblock %}
 
@@ -42,7 +83,8 @@
                 <li class="breadcrumb-item active">Budget Dashboard</li>
             </ol>
         </nav>
-        <h1>{{ title }}</h1>
+        <h1><i class="fas fa-chart-line"></i> {{ title }}</h1>
+        <p class="lead">View budget trends and data across fiscal years</p>
     </div>
 </div>
 
@@ -51,7 +93,7 @@
     <div class="col">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Filters</h5>
+                <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
             </div>
             <div class="card-body">
                 <form id="filterForm">
@@ -87,6 +129,9 @@
                             <button type="button" id="applyFilters" class="btn btn-primary">
                                 <i class="fas fa-filter"></i> Apply Filters
                             </button>
+                            <button type="button" id="exportData" class="btn btn-success float-end">
+                                <i class="fas fa-file-export"></i> Export to CSV
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -100,7 +145,7 @@
     <div class="col">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Amended Budget by Fiscal Year</h5>
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Amended Budget by Fiscal Year</h5>
             </div>
             <div class="card-body">
                 <!-- Loading indicator -->
@@ -114,7 +159,9 @@
                 </div>
 
                 <!-- Chart container -->
-                <div id="chartContainer" class="chart-container" style="display: none;"></div>
+                <div id="chartContainer" class="chart-container" style="display: none;">
+                    <canvas id="budgetChart"></canvas>
+                </div>
 
                 <!-- Error message container -->
                 <div id="chartError" class="chart-error">
@@ -126,172 +173,96 @@
         </div>
     </div>
 </div>
+
+<!-- Summary Stats Section (will be populated by JavaScript) -->
+<div class="row mt-4" id="statsSection" style="display: none;">
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-pie"></i> Average Budget
+                </h5>
+                <h2 class="mt-3 mb-0" id="averageBudget">-</h2>
+                <p class="text-muted">Across selected period</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-line"></i> Growth Trend
+                </h5>
+                <h2 class="mt-3 mb-0" id="growthTrend">-</h2>
+                <p class="text-muted">Average yearly change</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-calendar-alt"></i> Data Points
+                </h5>
+                <h2 class="mt-3 mb-0" id="dataPointCount">-</h2>
+                <p class="text-muted">Number of fiscal years</p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<!-- Include Plotly from CDN - only load it when needed -->
-<script src="https://cdn.plot.ly/plotly-2.24.1.min.js" defer></script>
+<!-- Custom JS for this report -->
+<script src="{{ url_for('static', filename='js/finance/budget_dashboard.js') }}"></script>
 
 <script>
+    // Export button functionality
     document.addEventListener('DOMContentLoaded', function () {
-        // Load chart when page is ready
-        loadChartData();
+        const exportBtn = document.getElementById('exportData');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                // Get current filter values
+                const fiscalYear = document.getElementById('fiscalYearSelect').value;
+                const department = document.getElementById('departmentSelect').value;
 
-        // Filter button event handler
-        document.getElementById('applyFilters').addEventListener('click', function () {
-            loadChartData();
-        });
+                // Build export URL
+                let url = '/groups/finance/budget/export';
+                let params = [];
 
-        // Retry button event handler
-        document.getElementById('retryButton').addEventListener('click', function () {
-            document.getElementById('chartError').style.display = 'none';
-            loadChartData();
-        });
+                if (fiscalYear) {
+                    params.push('fiscal_year=' + encodeURIComponent(fiscalYear));
+                }
 
-        // Adjust chart on window resize
-        window.addEventListener('resize', function () {
-            const chartDiv = document.getElementById('chartContainer');
-            if (chartDiv && chartDiv.innerHTML && window.Plotly) {
-                Plotly.Plots.resize(chartDiv);
-            }
-        });
+                if (department) {
+                    params.push('department=' + encodeURIComponent(department));
+                }
 
-        // Listen for dark mode changes if available
-        if (typeof window.darkModeManager !== 'undefined') {
-            // Create custom event for dark mode changes
-            const darkModeEvent = new CustomEvent('darkModeChanged');
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
 
-            // Listen for dark mode toggles
-            document.getElementById('toggle-theme')?.addEventListener('click', function () {
-                // Give the DOM time to update
+                // Open in new tab
+                window.open(url, '_blank');
+            });
+        }
+    });
+
+    // Custom event for dark mode changes
+    document.addEventListener('DOMContentLoaded', function () {
+        // Create custom event
+        const darkModeChangedEvent = new CustomEvent('darkModeChanged');
+
+        // Find theme toggle button
+        const themeToggle = document.getElementById('toggle-theme');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                // Dispatch custom event after a short delay
                 setTimeout(() => {
-                    document.dispatchEvent(darkModeEvent);
+                    document.dispatchEvent(darkModeChangedEvent);
                 }, 100);
             });
         }
-
-        // Listen for the custom dark mode event
-        document.addEventListener('darkModeChanged', updateChartTheme);
     });
-
-    /**
-     * Load chart data via AJAX
-     */
-    function loadChartData() {
-        // Show loading, hide chart and error
-        document.getElementById('chartLoading').style.display = 'flex';
-        document.getElementById('chartContainer').style.display = 'none';
-        document.getElementById('chartError').style.display = 'none';
-
-        // Get filter values
-        const fiscalYear = document.getElementById('fiscalYearSelect').value;
-        const department = document.getElementById('departmentSelect').value;
-
-        // Build query string with proper handling of empty values
-        let queryParams = [];
-        if (fiscalYear && fiscalYear !== '') {
-            queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
-        }
-        if (department && department !== '') {
-            queryParams.push('department=' + encodeURIComponent(department));
-        }
-
-        // Add timestamp to prevent caching
-        queryParams.push('_t=' + new Date().getTime());
-
-        // Build URL
-        const url = '/groups/finance/budget/api/chart-data?' + queryParams.join('&');
-
-        // Fetch the data
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Check if we have data
-                    if (data.fiscal_years && data.fiscal_years.length > 0) {
-                        // Render the chart
-                        document.getElementById('chartContainer').innerHTML = data.chart_html;
-
-                        // Show chart, hide loading
-                        document.getElementById('chartLoading').style.display = 'none';
-                        document.getElementById('chartContainer').style.display = 'block';
-
-                        // Delay theme update to ensure chart is fully rendered
-                        setTimeout(() => {
-                            updateChartTheme();
-                        }, 500);
-                    } else {
-                        // No data to display
-                        document.getElementById('chartLoading').style.display = 'none';
-                        document.getElementById('chartError').style.display = 'block';
-                        document.getElementById('errorMessage').textContent =
-                            'No budget data available for the selected filters. Try different criteria.';
-                    }
-                } else {
-                    throw new Error(data.error || 'Unknown error occurred');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-
-                // Show error message
-                document.getElementById('errorMessage').textContent = error.message;
-                document.getElementById('chartError').style.display = 'block';
-                document.getElementById('chartLoading').style.display = 'none';
-            });
-    }
-
-    /**
-     * Update chart theme based on dark/light mode
-     */
-    function updateChartTheme() {
-        // First check if Plotly is fully loaded
-        if (typeof window.Plotly === 'undefined') {
-            console.warn('Plotly not yet loaded, skipping theme update');
-            return;
-        }
-
-        // Then check if the chart container exists and has content
-        const chartContainer = document.getElementById('chartContainer');
-        if (!chartContainer || !chartContainer.innerHTML.trim()) {
-            console.warn('Chart container empty, skipping theme update');
-            return;
-        }
-
-        // Find the actual plot element inside the container
-        const plotElement = chartContainer.querySelector('.js-plotly-plot');
-        if (!plotElement) {
-            console.warn('Plot element not found in container, skipping theme update');
-            return;
-        }
-
-        // Now try to update the theme with proper error handling
-        try {
-            const isDarkMode = document.documentElement.classList.contains('dark-mode');
-
-            const newLayout = {
-                template: isDarkMode ? 'plotly_dark' : 'plotly_white',
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                font: {
-                    color: isDarkMode ? '#E0E0E0' : '#333333'
-                }
-            };
-
-            // Check if Plotly.relayout is actually available
-            if (typeof Plotly.relayout === 'function') {
-                Plotly.relayout(plotElement, newLayout);
-            } else {
-                console.warn('Plotly.relayout function not available');
-            }
-        } catch (e) {
-            console.warn('Error updating chart theme:', e);
-        }
-    }
 </script>
 {% endblock %}
