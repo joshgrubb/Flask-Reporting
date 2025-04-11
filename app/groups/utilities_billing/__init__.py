@@ -53,3 +53,7 @@ from app.groups.utilities_billing.cash_only_accounts import (
 )  # noqa
 
 bp.register_blueprint(cash_only_accounts_bp)
+
+from app.groups.utilities_billing.vflex import bp as vflex_bp  # noqa
+
+bp.register_blueprint(vflex_bp)
