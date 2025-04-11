@@ -57,3 +57,9 @@ bp.register_blueprint(cash_only_accounts_bp)
 from app.groups.utilities_billing.vflex import bp as vflex_bp  # noqa
 
 bp.register_blueprint(vflex_bp)
+
+
+# Import and register credit balance report blueprint
+from app.groups.utilities_billing.credit_balance import bp as credit_balance_bp  # noqa
+
+bp.register_blueprint(credit_balance_bp)

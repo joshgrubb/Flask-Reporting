@@ -73,6 +73,20 @@ def index():
                 "url": "/groups/utilities_billing/vflex/",
                 "icon": "fa-solid fa-users",
             },
+            {
+                "id": "credit_balance",
+                "name": "Credit Balance Report",
+                "description": "View accounts with credit balances (negative balance amounts)",
+                "url": "/groups/utilities_billing/credit_balance/",
+                "icon": "fas fa-dollar-sign",
+            },
+            {
+                "id": "cut_nonpayment",
+                "name": "Cut for Nonpayment",
+                "description": "View accounts being cut for nonpayment",
+                "url": "/groups/utilities_billing/cut_nonpayment/",
+                "icon": "fas fa-dollar-sign",
+            },
             # Add more reports as they are implemented
         ]
 
