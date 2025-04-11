@@ -3,38 +3,39 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
+<!-- Search Filter Section -->
 <div class="row mb-4">
-    <div class="col">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
-                <li class="breadcrumb-item active">Public Works</li>
-            </ol>
-        </nav>
-        <h1><i class="fas fa-hard-hat"></i> {{ title }}</h1>
-        <p class="lead">Select a report to view detailed information.</p>
+    <div class="col-12">
+        <input type="text" id="reportSearch" class="form-control" placeholder="Search Reports..."
+            onkeyup="filterReports()">
     </div>
 </div>
 
-<div class="row">
+<!-- Reports Tiles -->
+<div class="row" id="reportsContainer">
     {% for report in reports %}
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="{{ report.icon }}"></i> {{ report.name }}
-                </h5>
+    <div class="col-md-3 col-sm-6 mb-4 report-tile">
+        <a href="{{ report.url }}" class="text-decoration-none">
+            <div class="card h-100 card-hover text-center report-card">
+                <div class="card-body">
+                    <i class="{{ report.icon }} fa-3x mb-3" aria-hidden="true"></i>
+                    <h5 class="card-title">{{ report.name }}</h5>
+                </div>
             </div>
-            <div class="card-body">
-                <p class="card-text">{{ report.description }}</p>
-            </div>
-            <div class="card-footer bg-light">
-                <a href="{{ report.url }}" class="btn btn-outline-primary">
-                    View Report <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </div>
+        </a>
     </div>
     {% endfor %}
 </div>
+
+<!-- Interactive Search/Filter Script -->
+<script>
+    function filterReports() {
+        var input = document.getElementById("reportSearch").value.toLowerCase();
+        var tiles = document.getElementsByClassName("report-tile");
+        for (var i = 0; i < tiles.length; i++) {
+            let titleText = tiles[i].querySelector('.card-title').innerText.toLowerCase();
+            tiles[i].style.display = titleText.indexOf(input) > -1 ? "" : "none";
+        }
+    }
+</script>
 {% endblock %}

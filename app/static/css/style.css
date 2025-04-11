@@ -842,3 +842,47 @@ footer {
     background-color: var(--surface-color);
     box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
 }
+/* New hover effect for cards */
+.hover-rise {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-rise:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Optional: Additional styling for the dashboard header if not using inline styles */
+.dashboard-header {
+    background: linear-gradient(90deg, var(--primary-light), var(--primary-color));
+    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+/* New style for colorful, clickable report cards */
+.report-card {
+    background: linear-gradient(135deg, #0D3B66, #3A78D8);
+    border: none;
+    color: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.report-card:hover {
+    background: linear-gradient(135deg, #0A2C50, #315BBF);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+/* New style for colorful, clickable group cards */
+.group-card {
+    background: linear-gradient(135deg, #0D3B66, #3A78D8);
+    border: none;
+    color: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.group-card:hover {
+    background: linear-gradient(135deg, #0A2C50, #315BBF);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
