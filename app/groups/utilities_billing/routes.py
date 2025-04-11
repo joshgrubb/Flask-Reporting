@@ -66,6 +66,13 @@ def index():
                 "url": "/groups/utilities_billing/cash_only_accounts/",
                 "icon": "fa-solid fa-money-bill-1",
             },
+            {
+                "id": "vflex",
+                "name": "VFLEX for Sensus",
+                "description": "VFLEX file to upload to Sensus to update customer data.",
+                "url": "/groups/utilities_billing/vflex/",
+                "icon": "fa-solid fa-users",
+            },
             # Add more reports as they are implemented
         ]
 
