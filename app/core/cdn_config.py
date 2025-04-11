@@ -69,6 +69,22 @@ class CDNResourceManager:
             "url": "https://cdn.jsdelivr.net/npm/flatpickr",
             "defer": True,
         },
+        "bootstrap-multiselect-css": {
+            "type": TYPE_CSS,
+            "url": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/1.1.2/css/bootstrap-multiselect.min.css",
+        },
+        "bootstrap-multiselect-js": {
+            "type": TYPE_JS,
+            "url": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/1.1.2/js/bootstrap-multiselect.min.js",
+        },
+        "select2-css": {
+            "type": TYPE_CSS,
+            "url": "https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css",
+        },
+        "select2-js": {
+            "type": TYPE_JS,
+            "url": "https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js",
+        },
     }
 
     # Resource bundles for common use cases
@@ -77,6 +93,8 @@ class CDNResourceManager:
         "datatables": ["datatables-css", "datatables-js", "datatables-bs5-js"],
         "chartjs": ["chartjs"],
         "datepicker": ["flatpickr-css", "flatpickr-js"],
+        "multiselect": ["bootstrap-multiselect-css", "bootstrap-multiselect-js"],
+        "select2": ["select2-css", "select2-js"],
     }
 
     @classmethod

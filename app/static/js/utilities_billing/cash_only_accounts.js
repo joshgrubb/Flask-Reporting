@@ -317,7 +317,7 @@ function processAccountsTimeline(data) {
         const lastDate = endDate && endDate < today ? endDate : today;
 
         while (currentDate <= lastDate) {
-            const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`;
+            const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
             monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
 
             // Move to next month
@@ -325,7 +325,7 @@ function processAccountsTimeline(data) {
         }
     });
 
-    // Convert to sorted array
+    // Convert to array and sort chronologically by using the monthKey format YYYY-MM
     const sortedMonths = Object.keys(monthlyData).sort();
 
     // Format labels and get counts

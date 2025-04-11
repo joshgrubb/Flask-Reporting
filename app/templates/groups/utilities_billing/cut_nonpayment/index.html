@@ -3,7 +3,7 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block cdn_resources %}
-{{ include_cdn(bundles=["datatables", "chartjs", "datepicker"]) }}
+{{ include_cdn(bundles=["datatables", "chartjs", "datepicker", "multiselect", "select2"]) }}
 {% endblock %}
 
 {% block content %}
@@ -33,11 +33,20 @@
                     </div>
                     <div class="col-md-3">
                         <label for="cycleSelect" class="form-label">Billing Cycles</label>
-                        <select class="form-select" id="cycleSelect" name="cycles" multiple>
-                            {% for cycle in cycles %}
-                            <option value="{{ cycle }}">{{ cycle }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="cycle-select-container">
+                            <select class="form-select" id="cycleSelect" name="cycles" multiple="multiple"
+                                data-placeholder="Select cycles...">
+                                <option value="">All Cycles</option>
+                                {% for cycle in cycles %}
+                                <option value="{{ cycle }}">{{ cycle }}</option>
+                                {% endfor %}
+                            </select>
+                            <!-- <div class="form-text mt-1">
+                                <small><i class="fas fa-info-circle"></i> You can select multiple cycles. Leave empty
+                                    for all
+                                    cycles.</small>
+                            </div> -->
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <button type="button" id="applyFilters" class="btn btn-primary">
@@ -101,8 +110,22 @@
                 <h5 class="mb-0">Cuts by Demographics</h5>
             </div>
             <div class="card-body">
-                <div id="chartContainer" class="chart-container loading">
-                    <!-- Charts will be loaded here -->
+                <div id="chartContainer" class="loading" style="min-height: 350px;">
+                    <!-- Initial chart container with placeholders -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div style="height: 300px; margin-bottom: 20px;">
+                                <h5>Cuts by Cycle</h5>
+                                <canvas id="cycleCutsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div style="height: 300px; margin-bottom: 20px;">
+                                <h5>Cuts by Account Type</h5>
+                                <canvas id="accountTypeCutsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

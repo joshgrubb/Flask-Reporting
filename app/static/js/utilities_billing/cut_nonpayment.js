@@ -15,12 +15,39 @@ $(document).ready(function () {
         });
     }
 
-    // Initialize multiselect for cycles
-    if ($.fn.multiselect) {
+    // Initialize Select2 for improved cycle selection
+    if ($.fn.select2) {
+        $('#cycleSelect').select2({
+            placeholder: 'Select billing cycles',
+            allowClear: true,
+            closeOnSelect: false,
+            width: '100%',
+            dropdownCssClass: 'select2-dropdown-large',
+            templateResult: formatCycleOption,
+            templateSelection: formatCycleSelection
+        });
+
+        // Add "Select All" option functionality
+        $('#cycleSelect').on('select2:select', function (e) {
+            if (e.params.data.id === '') {
+                // If "All Cycles" is selected, deselect all other options
+                $('#cycleSelect').val(['']).trigger('change');
+            } else {
+                // If any specific cycle is selected, deselect the "All Cycles" option
+                let selectedValues = $('#cycleSelect').val() || [];
+                if (selectedValues.includes('')) {
+                    selectedValues = selectedValues.filter(value => value !== '');
+                    $('#cycleSelect').val(selectedValues).trigger('change');
+                }
+            }
+        });
+    } else if ($.fn.multiselect) {
+        // Fallback to Bootstrap multiselect if Select2 is not available
         $('#cycleSelect').multiselect({
             includeSelectAllOption: true,
             nonSelectedText: 'All Cycles',
-            enableFiltering: true
+            enableFiltering: true,
+            maxHeight: 300
         });
     }
 
@@ -40,11 +67,14 @@ $(document).ready(function () {
         $('#cutDateInput').val(formattedDate);
 
         // Reset cycles to nothing selected (which means all)
-        if ($.fn.multiselect) {
+        if ($.fn.select2) {
+            $('#cycleSelect').val(['']);
+            $('#cycleSelect').trigger('change');
+        } else if ($.fn.multiselect) {
             $('#cycleSelect').multiselect('deselectAll', false);
             $('#cycleSelect').multiselect('updateButtonText');
         } else {
-            $('#cycleSelect').val([]);
+            $('#cycleSelect').val(['']);
         }
 
         // Reload data
@@ -55,6 +85,32 @@ $(document).ready(function () {
         exportReportData();
     });
 });
+
+/**
+ * Format cycle option for Select2
+ * @param {Object} cycle - The cycle option
+ * @returns {jQuery|string} - Formatted option
+ */
+function formatCycleOption(cycle) {
+    if (!cycle.id) {
+        return $('<span><i class="fas fa-check-square"></i> All Cycles (select all)</span>');
+    }
+
+    return $('<span><i class="fas fa-calendar-alt"></i> ' + cycle.text + '</span>');
+}
+
+/**
+ * Format cycle selection for Select2
+ * @param {Object} cycle - The selected cycle
+ * @returns {jQuery|string} - Formatted selection
+ */
+function formatCycleSelection(cycle) {
+    if (!cycle.id) {
+        return $('<span><i class="fas fa-check-square"></i> All Cycles</span>');
+    }
+
+    return $('<span><i class="fas fa-calendar-alt"></i> ' + cycle.text + '</span>');
+}
 
 /**
  * Load all data for the report
@@ -199,34 +255,38 @@ function initSummaryCharts(summaryData) {
         return;
     }
 
-    // Initialize the chart container if empty
-    if ($('#chartContainer').children().length === 0) {
-        $('#chartContainer').html(`
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="chart-box">
-                        <h5>Cuts by Cycle</h5>
-                        <canvas id="cycleCutsChart"></canvas>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="chart-box">
-                        <h5>Cuts by Account Type</h5>
-                        <canvas id="accountTypeCutsChart"></canvas>
-                    </div>
+    // Always re-initialize the chart container to ensure clean state
+    $('#chartContainer').html(`
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-box" style="height: 300px; margin-bottom: 20px;">
+                    <h5>Cuts by Cycle</h5>
+                    <canvas id="cycleCutsChart"></canvas>
                 </div>
             </div>
-        `);
-    }
+            <div class="col-md-6">
+                <div class="chart-box" style="height: 300px; margin-bottom: 20px;">
+                    <h5>Cuts by Account Type</h5>
+                    <canvas id="accountTypeCutsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    `);
 
     // Process data for charts
     const processedData = processSummaryData(summaryData);
 
-    // Initialize cycle chart
-    initCycleChart(processedData.byCycle);
+    // Log the processed data for debugging
+    console.log("Processed chart data:", processedData);
 
-    // Initialize account type chart
-    initAccountTypeChart(processedData.byAccountType);
+    // Add slight delay to ensure DOM is ready
+    setTimeout(() => {
+        // Initialize cycle chart
+        initCycleChart(processedData.byCycle);
+
+        // Initialize account type chart
+        initAccountTypeChart(processedData.byAccountType);
+    }, 100);
 }
 
 /**
