@@ -25,6 +25,13 @@ def index():
         # List of available reports
         reports = [
             {
+                "id": "utility_dashboard",
+                "name": "Utility Billing Dashboard",
+                "description": "Overview of utility billing metrics and KPIs",
+                "url": "/groups/utilities_billing/trending/",
+                "icon": "fa-solid fa-chart-column",
+            },
+            {
                 "id": "new_customer_accounts",
                 "name": "New Customer Accounts",
                 "description": "Report showing new customer account information",
@@ -53,11 +60,11 @@ def index():
                 "icon": "fas fa-search-dollar",
             },
             {
-                "id": "utility_dashboard",
-                "name": "Utility Billing Dashboard",
-                "description": "Overview of utility billing metrics and KPIs",
-                "url": "/groups/utilities_billing/trending/",
-                "icon": "fa-solid fa-chart-column",
+                "id": "cash_only_accounts",
+                "name": "Cash Only Accounts",
+                "description": "Utility accounts restricted to cash only, no checks",
+                "url": "/groups/utilities_billing/cash_only_accounts/",
+                "icon": "fa-solid fa-money-bill-1",
             },
             # Add more reports as they are implemented
         ]

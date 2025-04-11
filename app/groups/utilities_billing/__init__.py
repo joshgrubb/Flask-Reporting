@@ -47,3 +47,9 @@ from app.groups.utilities_billing.trending import (
     bp as trending_bp,
 )  # noqa
 bp.register_blueprint(trending_bp)
+
+from app.groups.utilities_billing.cash_only_accounts import (
+    bp as cash_only_accounts_bp,
+)  # noqa
+
+bp.register_blueprint(cash_only_accounts_bp)
