@@ -1,0 +1,95 @@
+    .chart-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 300px;
+        width: 100%;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+
+    .small-chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+
+    /* Error message styling */
+    .chart-error {
+        padding: 20px;
+        background-color: var(--danger-light);
+        color: var(--danger-color);
+        border-radius: 8px;
+        margin-top: 20px;
+        display: none;
+    }
+
+    /* Summary stats card styling */
+    .stats-card {
+        transition: all 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* KPI indicator colors */
+    .kpi-positive {
+        color: var(--success-color);
+    }
+
+    .kpi-negative {
+        color: var(--danger-color);
+    }
+
+    .kpi-neutral {
+        color: var(--primary-color);
+    }
+
+    /* Tabs styling */
+    .dashboard-tabs .nav-link {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+
+    .dashboard-tabs .nav-link.active {
+        font-weight: 600;
+        border-bottom: 3px solid var(--primary-color);
+    }
+
+    /* Dashboard section spacing */
+    .dashboard-section {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Dark mode specific styles */
+    .dark-mode .stats-card {
+        background-color: var(--card-background);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    .dark-mode .stats-card h2 {
+        color: var(--primary-color);
+    }
+
+    .dark-mode .stats-card .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .dark-mode .form-select,
+    .dark-mode .form-control {
+        background-color: var(--surface-color);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+
+    /* Fix for card headers in dark mode */
+    .dark-mode .card-header.bg-primary {
+        background-color: var(--primary-color) !important;
+    }

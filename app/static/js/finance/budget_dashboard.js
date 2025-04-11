@@ -139,6 +139,608 @@ function loadKPISummary() {
             container.innerHTML = '';
             container.appendChild(errorMsg);
             container.style.display = 'block';
+
+            // Set default values in KPI cards
+            document.getElementById('totalBudget').textContent = '$0';
+            document.getElementById('totalBudgetChange').textContent = '0%';
+            document.getElementById('budgetSpent').textContent = '$0';
+            document.getElementById('budgetSpentPercent').textContent = '0%';
+            document.getElementById('remainingBudget').textContent = '$0';
+            document.getElementById('remainingBudgetStatus').textContent = 'No data available';
+            document.getElementById('spendingTrend').textContent = 'N/A';
+            document.getElementById('spendingTrendDesc').textContent = 'No data available';
+        });
+}
+
+/**
+ * Update KPI cards with summary data
+ * @param {Array} data - Budget summary data
+ */
+function updateKPICards(data) {
+    if (!data || !data.length) return;
+
+    // Calculate totals
+    let totalBudget = 0;
+    let totalActual = 0;
+    let totalEncumbrance = 0;
+    let remainingBudget = 0;
+
+    data.forEach(item => {
+        totalBudget += item.total_budget;
+        totalActual += item.total_actual;
+        totalEncumbrance += item.total_encumbrance;
+    });
+
+    remainingBudget = totalBudget - totalActual - totalEncumbrance;
+    const percentSpent = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0;
+
+    // Format and display totals
+    document.getElementById('totalBudget').textContent = formatCurrency(totalBudget);
+    document.getElementById('budgetSpent').textContent = formatCurrency(totalActual);
+    document.getElementById('remainingBudget').textContent = formatCurrency(remainingBudget);
+
+    // Calculate and display spending percent
+    const percentElem = document.getElementById('budgetSpentPercent');
+    percentElem.textContent = percentSpent.toFixed(1) + '%';
+
+    // Add appropriate class based on spending
+    percentElem.className = '';
+    if (percentSpent > 90) {
+        percentElem.classList.add('kpi-negative');
+    } else if (percentSpent > 70) {
+        percentElem.classList.add('kpi-neutral');
+    } else {
+        percentElem.classList.add('kpi-positive');
+    }
+
+    // Update remaining budget status
+    const remainingStatus = document.getElementById('remainingBudgetStatus');
+    if (remainingBudget <= 0) {
+        remainingStatus.textContent = 'Budget depleted';
+        remainingStatus.className = 'text-muted kpi-negative';
+    } else if (remainingBudget < totalBudget * 0.1) {
+        remainingStatus.textContent = 'Low remaining budget';
+        remainingStatus.className = 'text-muted kpi-neutral';
+    } else {
+        remainingStatus.textContent = 'Available to spend';
+        remainingStatus.className = 'text-muted';
+    }
+
+    // Determine spending trend
+    let trendLabel = 'Stable';
+    let trendDesc = 'Based on current data';
+
+    // In a real implementation, calculate trend from monthly data
+    // For now, use a simple heuristic based on % spent
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const expectedSpentPercent = (currentMonth / 12) * 100; // Simple linear model
+
+    if (percentSpent > expectedSpentPercent * 1.2) {
+        trendLabel = 'Above Plan';
+        trendDesc = 'Spending faster than expected';
+        document.getElementById('spendingTrend').className = 'mt-3 mb-0 kpi-negative';
+    } else if (percentSpent < expectedSpentPercent * 0.8) {
+        trendLabel = 'Below Plan';
+        trendDesc = 'Spending slower than expected';
+        document.getElementById('spendingTrend').className = 'mt-3 mb-0 kpi-positive';
+    } else {
+        trendLabel = 'On Plan';
+        trendDesc = 'Spending at expected rate';
+        document.getElementById('spendingTrend').className = 'mt-3 mb-0';
+    }
+
+    document.getElementById('spendingTrend').textContent = trendLabel;
+    document.getElementById('spendingTrendDesc').textContent = trendDesc;
+
+    // Update budget change (simulated)
+    // In a real implementation, this would compare current budget to previous period
+    document.getElementById('totalBudgetChange').textContent = '2.5%';
+}
+
+/**
+ * Load overview chart (Fiscal Year Trend)
+ */
+function loadOverviewChart() {
+    // Show loading, hide chart and error
+    document.getElementById('overviewLoading').style.display = 'flex';
+    document.getElementById('overviewChartContainer').style.display = 'none';
+    document.getElementById('overviewChartError').style.display = 'none';
+
+    // Get filter values
+    const fiscalYear = document.getElementById('fiscalYearSelect').value;
+    const department = document.getElementById('departmentSelect').value;
+
+    // Build query string with proper handling of empty values
+    let queryParams = [];
+    if (fiscalYear) queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
+    if (department) queryParams.push('department=' + encodeURIComponent(department));
+
+    // Add timestamp to prevent caching
+    queryParams.push('_t=' + new Date().getTime());
+
+    // Build URL
+    const url = '/groups/finance/budget/api/chart-data?' + queryParams.join('&');
+
+    // Fetch the data
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Check if we have data
+                if (data.fiscal_years && data.fiscal_years.length > 0) {
+                    // Render the chart
+                    createOverviewChart(data.fiscal_years, data.amended_totals);
+
+                    // Show chart, hide loading
+                    document.getElementById('overviewLoading').style.display = 'none';
+                    document.getElementById('overviewChartContainer').style.display = 'block';
+                } else {
+                    // No data to display
+                    document.getElementById('overviewLoading').style.display = 'none';
+                    document.getElementById('overviewChartError').style.display = 'block';
+                    document.getElementById('overviewErrorMessage').textContent =
+                        'No budget data available for the selected filters. Try different criteria.';
+                }
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+
+            // Show error message
+            document.getElementById('overviewErrorMessage').textContent = error.message;
+            document.getElementById('overviewChartError').style.display = 'block';
+            document.getElementById('overviewLoading').style.display = 'none';
+        });
+}
+
+/**
+ * Create the overview chart (Fiscal Year Trend)
+ * @param {Array} fiscalYears - Array of fiscal years
+ * @param {Array} budgetValues - Array of budget values
+ */
+function createOverviewChart(fiscalYears, budgetValues) {
+    // Verify Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded properly!');
+        document.getElementById('overviewErrorMessage').textContent = 'Chart.js library not loaded. Please try refreshing the page.';
+        document.getElementById('overviewChartError').style.display = 'block';
+        document.getElementById('overviewLoading').style.display = 'none';
+        return;
+    }
+
+    // Get canvas element
+    const canvas = document.getElementById('budgetChart');
+    if (!canvas) {
+        console.error('Canvas element "budgetChart" not found');
+        return;
+    }
+
+    // Properly destroy any existing chart
+    try {
+        // Try Chart.js v3+ method first
+        if (typeof Chart.getChart === 'function') {
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+        }
+        // Fall back to our stored reference
+        else if (chartInstances.overview) {
+            chartInstances.overview.destroy();
+        }
+    } catch (e) {
+        console.warn('Error destroying existing chart:', e);
+    }
+
+    // Format numbers for tooltip and Y axis
+    const formatCurrency = function (value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(value);
+    };
+
+    // Determine if dark mode is active
+    const isDarkMode = document.documentElement.classList.contains('dark-mode');
+
+    // Define chart colors based on mode
+    const textColor = isDarkMode ? '#E0E0E0' : '#333333';
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    const lineColor = isDarkMode ? '#6FA3FF' : '#0D3B66';
+    const pointColor = isDarkMode ? '#6FA3FF' : '#0D3B66';
+    const pointHoverColor = isDarkMode ? '#FFFFFF' : '#0D3B66';
+
+    // Create new chart
+    try {
+        // Calculate moving average if we have enough data points
+        let movingAverageData = null;
+        if (budgetValues.length >= 3) {
+            movingAverageData = calculateMovingAverage(budgetValues, 2);
+        }
+
+        chartInstances.overview = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: fiscalYears,
+                datasets: [
+                    {
+                        label: 'Amended Budget',
+                        data: budgetValues,
+                        backgroundColor: 'rgba(13, 59, 102, 0.2)',
+                        borderColor: lineColor,
+                        borderWidth: 3,
+                        pointBackgroundColor: pointColor,
+                        pointBorderColor: pointColor,
+                        pointHoverBackgroundColor: pointHoverColor,
+                        pointHoverBorderColor: pointHoverColor,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        fill: true,
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Amended Budget Total by Fiscal Year',
+                        color: textColor,
+                        font: {
+                            size: 18,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: textColor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return formatCurrency(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Fiscal Year',
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Amended Budget Total ($)',
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor,
+                            callback: function (value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Add trend line if we have moving average data
+        if (movingAverageData) {
+            chartInstances.overview.data.datasets.push({
+                label: 'Trend (2-Year Moving Avg)',
+                data: movingAverageData,
+                borderColor: isDarkMode ? 'rgba(255, 183, 77, 1)' : 'rgba(255, 152, 0, 1)',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false,
+                tension: 0
+            });
+            chartInstances.overview.update();
+        }
+
+    } catch (error) {
+        console.error('Error creating chart:', error);
+        document.getElementById('overviewErrorMessage').textContent = 'Error creating chart: ' + error.message;
+        document.getElementById('overviewChartError').style.display = 'block';
+        document.getElementById('overviewLoading').style.display = 'none';
+    }
+}
+
+/**
+ * Load budget vs actual comparison chart
+ */
+function loadComparisonChart() {
+    // Show loading indicator
+    document.getElementById('comparisonChartLoading').style.display = 'flex';
+    document.getElementById('comparisonChartContainer').style.display = 'none';
+
+    // Get filter values
+    const fiscalYear = document.getElementById('fiscalYearSelect').value;
+    const department = document.getElementById('departmentSelect').value;
+
+    // Build query parameters
+    let queryParams = [];
+    if (fiscalYear) queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
+    if (department) queryParams.push('department=' + encodeURIComponent(department));
+
+    // Add timestamp to prevent caching
+    queryParams.push('_t=' + new Date().getTime());
+
+    // Build URL for budget summary API
+    const url = '/groups/finance/budget/api/budget-summary?' + queryParams.join('&');
+
+    // Fetch the data
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.data && data.data.length > 0) {
+                createComparisonChart(data.data);
+
+                // Show chart, hide loading
+                document.getElementById('comparisonChartLoading').style.display = 'none';
+                document.getElementById('comparisonChartContainer').style.display = 'block';
+            } else {
+                throw new Error(data.error || 'No data available for the selected filters');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading comparison data:', error);
+
+            // Show error message
+            document.getElementById('comparisonChartLoading').style.display = 'none';
+
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'alert alert-warning mt-3';
+            errorMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${error.message}`;
+
+            document.getElementById('comparisonChartContainer').innerHTML = '';
+            document.getElementById('comparisonChartContainer').appendChild(errorMsg);
+            document.getElementById('comparisonChartContainer').style.display = 'block';
+        });
+}
+
+/**
+ * Create budget vs actual comparison chart
+ * @param {Array} data - Budget summary data
+ */
+function createComparisonChart(data) {
+    if (!data || !data.length) return;
+
+    // Group data by department and calculate totals
+    const departmentData = {};
+
+    data.forEach(item => {
+        if (!item.department) return;
+
+        if (!departmentData[item.department]) {
+            departmentData[item.department] = {
+                budget: 0,
+                actual: 0,
+                encumbrance: 0,
+                remaining: 0
+            };
+        }
+
+        departmentData[item.department].budget += item.total_budget;
+        departmentData[item.department].actual += item.total_actual;
+        departmentData[item.department].encumbrance += item.total_encumbrance;
+        departmentData[item.department].remaining += item.remaining_budget;
+    });
+
+    // Sort departments by budget and get top departments
+    const sortedDepartments = Object.keys(departmentData)
+        .sort((a, b) => departmentData[b].budget - departmentData[a].budget)
+        .slice(0, 6); // Show top 6 departments only
+
+    // Extract chart data
+    const labels = sortedDepartments;
+    const budgetValues = sortedDepartments.map(dept => departmentData[dept].budget);
+    const actualValues = sortedDepartments.map(dept => departmentData[dept].actual);
+    const encumbranceValues = sortedDepartments.map(dept => departmentData[dept].encumbrance);
+
+    // Get canvas element
+    const canvas = document.getElementById('budgetVsActualChart');
+    if (!canvas) {
+        console.error('Canvas element "budgetVsActualChart" not found');
+        return;
+    }
+
+    // Destroy existing chart if any
+    try {
+        if (typeof Chart.getChart === 'function') {
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+        } else if (chartInstances.comparison) {
+            chartInstances.comparison.destroy();
+        }
+    } catch (e) {
+        console.warn('Error destroying existing chart:', e);
+    }
+
+    // Determine if dark mode is active
+    const isDarkMode = document.documentElement.classList.contains('dark-mode');
+
+    // Chart colors
+    const textColor = isDarkMode ? '#E0E0E0' : '#333333';
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+    // Create the chart
+    try {
+        chartInstances.comparison = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Budget',
+                        data: budgetValues,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Actual',
+                        data: actualValues,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Encumbrance',
+                        data: encumbranceValues,
+                        backgroundColor: 'rgba(255, 206, 86, 0.7)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bar chart
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Budget vs. Actual by Department',
+                        color: textColor,
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.dataset.label || '';
+                                const value = context.raw;
+                                return `${label}: ${formatCurrency(value)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
+                        title: {
+                            display: true,
+                            text: 'Amount',
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor,
+                            callback: function (value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    },
+                    y: {
+                        stacked: false,
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error creating comparison chart:', error);
+        document.getElementById('comparisonChartContainer').innerHTML =
+            `<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Error creating chart: ${error.message}</div>`;
+    }
+}
+
+/**
+ * Load budget summary data and populate table
+ */
+function loadBudgetSummary() {
+    // Show loading indicator
+    document.getElementById('budgetSummaryLoading').style.display = 'block';
+    document.getElementById('budgetSummaryContainer').style.display = 'none';
+
+    // Get filter values
+    const fiscalYear = document.getElementById('fiscalYearSelect').value;
+    const department = document.getElementById('departmentSelect').value;
+
+    // Build query string
+    let queryParams = [];
+    if (fiscalYear) queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
+    if (department) queryParams.push('department=' + encodeURIComponent(department));
+
+    // Add timestamp to prevent caching
+    queryParams.push('_t=' + new Date().getTime());
+
+    // Build URL
+    const url = '/groups/finance/budget/api/budget-summary?' + queryParams.join('&');
+
+    // Fetch the data
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Populate table
+                populateBudgetSummaryTable(data.data);
+
+                // Show table, hide loading
+                document.getElementById('budgetSummaryLoading').style.display = 'none';
+                document.getElementById('budgetSummaryContainer').style.display = 'block';
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading budget summary:', error);
+
+            // Show error message
+            document.getElementById('budgetSummaryLoading').style.display = 'none';
+
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'alert alert-warning';
+            errorMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${error.message}`;
+
+            const container = document.getElementById('budgetSummaryContainer');
+            container.innerHTML = '';
+            container.appendChild(errorMsg);
+            container.style.display = 'block';
         });
 }
 
@@ -446,314 +1048,6 @@ function calculateMovingAverage(data, period) {
     }
 
     return result;
-}
-throw new Error(data.error || 'Unknown error occurred');
-            }
-        })
-        .catch (error => {
-    console.error('Error loading KPI data:', error);
-
-    // Set default values in case of error
-    document.getElementById('totalBudget').textContent = '$0';
-    document.getElementById('budgetSpent').textContent = '$0';
-    document.getElementById('remainingBudget').textContent = '$0';
-    document.getElementById('spendingTrend').textContent = 'N/A';
-});
-}
-
-/**
- * Update KPI cards with summary data
- * @param {Array} data - Budget summary data
- */
-function updateKPICards(data) {
-    if (!data || !data.length) return;
-
-    // Calculate totals
-    let totalBudget = 0;
-    let totalActual = 0;
-    let totalEncumbrance = 0;
-    let remainingBudget = 0;
-
-    data.forEach(item => {
-        totalBudget += item.total_budget;
-        totalActual += item.total_actual;
-        totalEncumbrance += item.total_encumbrance;
-    });
-
-    remainingBudget = totalBudget - totalActual - totalEncumbrance;
-    const percentSpent = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0;
-
-    // Format and display totals
-    document.getElementById('totalBudget').textContent = formatCurrency(totalBudget);
-    document.getElementById('budgetSpent').textContent = formatCurrency(totalActual);
-    document.getElementById('remainingBudget').textContent = formatCurrency(remainingBudget);
-
-    // Calculate and display spending percent
-    const percentElem = document.getElementById('budgetSpentPercent');
-    percentElem.textContent = percentSpent.toFixed(1) + '%';
-
-    // Add appropriate class based on spending
-    percentElem.className = '';
-    if (percentSpent > 90) {
-        percentElem.classList.add('kpi-negative');
-    } else if (percentSpent > 70) {
-        percentElem.classList.add('kpi-neutral');
-    } else {
-        percentElem.classList.add('kpi-positive');
-    }
-
-    // Update remaining budget status
-    const remainingStatus = document.getElementById('remainingBudgetStatus');
-    if (remainingBudget <= 0) {
-        remainingStatus.textContent = 'Budget depleted';
-        remainingStatus.className = 'text-muted kpi-negative';
-    } else if (remainingBudget < totalBudget * 0.1) {
-        remainingStatus.textContent = 'Low remaining budget';
-        remainingStatus.className = 'text-muted kpi-neutral';
-    } else {
-        remainingStatus.textContent = 'Available to spend';
-        remainingStatus.className = 'text-muted';
-    }
-
-    // Determine spending trend (if we have the data to do so)
-    // In a real implementation, you would calculate this from monthly data
-    document.getElementById('spendingTrend').textContent = 'Stable';
-    document.getElementById('spendingTrendDesc').textContent = 'Based on current data';
-}
-
-/**
- * Load overview chart (Fiscal Year Trend)
- */
-function loadOverviewChart() {
-    // Show loading, hide chart and error
-    document.getElementById('overviewLoading').style.display = 'flex';
-    document.getElementById('overviewChartContainer').style.display = 'none';
-    document.getElementById('overviewChartError').style.display = 'none';
-
-    // Get filter values
-    const fiscalYear = document.getElementById('fiscalYearSelect').value;
-    const department = document.getElementById('departmentSelect').value;
-
-    // Build query string with proper handling of empty values
-    let queryParams = [];
-    if (fiscalYear) queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
-    if (department) queryParams.push('department=' + encodeURIComponent(department));
-
-    // Add timestamp to prevent caching
-    queryParams.push('_t=' + new Date().getTime());
-
-    // Build URL
-    const url = '/groups/finance/budget/api/chart-data?' + queryParams.join('&');
-
-    // Fetch the data
-    fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Check if we have data
-                if (data.fiscal_years && data.fiscal_years.length > 0) {
-                    // Render the chart
-                    createOverviewChart(data.fiscal_years, data.amended_totals);
-
-                    // Show chart, hide loading
-                    document.getElementById('overviewLoading').style.display = 'none';
-                    document.getElementById('overviewChartContainer').style.display = 'block';
-                } else {
-                    // No data to display
-                    document.getElementById('overviewLoading').style.display = 'none';
-                    document.getElementById('overviewChartError').style.display = 'block';
-                    document.getElementById('overviewErrorMessage').textContent =
-                        'No budget data available for the selected filters. Try different criteria.';
-                }
-            } else {
-                throw new Error(data.error || 'Unknown error occurred');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-
-            // Show error message
-            document.getElementById('overviewErrorMessage').textContent = error.message;
-            document.getElementById('overviewChartError').style.display = 'block';
-            document.getElementById('overviewLoading').style.display = 'none';
-        });
-}
-
-/**
- * Create the overview chart (Fiscal Year Trend)
- * @param {Array} fiscalYears - Array of fiscal years
- * @param {Array} budgetValues - Array of budget values
- */
-function createOverviewChart(fiscalYears, budgetValues) {
-    // Verify Chart.js is available
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js is not loaded properly!');
-        document.getElementById('overviewErrorMessage').textContent = 'Chart.js library not loaded. Please try refreshing the page.';
-        document.getElementById('overviewChartError').style.display = 'block';
-        document.getElementById('overviewLoading').style.display = 'none';
-        return;
-    }
-
-    // Get canvas element
-    const canvas = document.getElementById('budgetChart');
-    if (!canvas) {
-        console.error('Canvas element "budgetChart" not found');
-        return;
-    }
-
-    // Properly destroy any existing chart
-    try {
-        // Try Chart.js v3+ method first
-        if (typeof Chart.getChart === 'function') {
-            const existingChart = Chart.getChart(canvas);
-            if (existingChart) {
-                existingChart.destroy();
-            }
-        }
-        // Fall back to our stored reference
-        else if (chartInstances.overview) {
-            chartInstances.overview.destroy();
-        }
-    } catch (e) {
-        console.warn('Error destroying existing chart:', e);
-    }
-
-    // Format numbers for tooltip and Y axis
-    const formatCurrency = function (value) {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(value);
-    };
-
-    // Determine if dark mode is active
-    const isDarkMode = document.documentElement.classList.contains('dark-mode');
-
-    // Define chart colors based on mode
-    const textColor = isDarkMode ? '#E0E0E0' : '#333333';
-    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-    const lineColor = isDarkMode ? '#6FA3FF' : '#0D3B66';
-    const pointColor = isDarkMode ? '#6FA3FF' : '#0D3B66';
-    const pointHoverColor = isDarkMode ? '#FFFFFF' : '#0D3B66';
-
-    // Create new chart
-    try {
-        // Calculate moving average if we have enough data points
-        let movingAverageData = null;
-        if (budgetValues.length >= 3) {
-            movingAverageData = calculateMovingAverage(budgetValues, 2);
-        }
-
-        chartInstances.overview = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: fiscalYears,
-                datasets: [
-                    {
-                        label: 'Amended Budget',
-                        data: budgetValues,
-                        backgroundColor: 'rgba(13, 59, 102, 0.2)',
-                        borderColor: lineColor,
-                        borderWidth: 3,
-                        pointBackgroundColor: pointColor,
-                        pointBorderColor: pointColor,
-                        pointHoverBackgroundColor: pointHoverColor,
-                        pointHoverBorderColor: pointHoverColor,
-                        pointRadius: 6,
-                        pointHoverRadius: 8,
-                        fill: true,
-                        tension: 0.1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Amended Budget Total by Fiscal Year',
-                        color: textColor,
-                        font: {
-                            size: 18,
-                            weight: 'bold'
-                        }
-                    },
-                    legend: {
-                        display: true,
-                        labels: {
-                            color: textColor
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return formatCurrency(context.parsed.y);
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Fiscal Year',
-                            color: textColor
-                        },
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Amended Budget Total ($)',
-                            color: textColor
-                        },
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor,
-                            callback: function (value) {
-                                return formatCurrency(value);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // Add trend line if we have moving average data
-        if (movingAverageData) {
-            chartInstances.overview.data.datasets.push({
-                label: 'Trend (2-Year Moving Avg)',
-                data: movingAverageData,
-                borderColor: isDarkMode ? 'rgba(255, 183, 77, 1)' : 'rgba(255, 152, 0, 1)',
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                pointRadius: 0,
-                fill: false,
-                tension: 0
-            });
-            chartInstances.overview.update();
-        }
-
-    } catch (error) {
-        console.error('Error creating chart:', error);
-        document.getElementById('overviewErrorMessage').textContent = 'Error creating chart: ' + error.message;
-        document.getElementById('overviewChartError').style.display = 'block';
-        document.getElementById('overviewLoading').style.display = 'none';
-    }
 }
 
 /**
@@ -1255,256 +1549,3 @@ function createMonthlyTrendChart(data) {
             `<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Error creating chart: ${error.message}</div>`;
     }
 }
-
-/**
- * Load budget vs actual comparison chart
- */
-function loadComparisonChart() {
-    // Show loading indicator
-    document.getElementById('comparisonChartLoading').style.display = 'flex';
-    document.getElementById('comparisonChartContainer').style.display = 'none';
-
-    // Get filter values
-    const fiscalYear = document.getElementById('fiscalYearSelect').value;
-    const department = document.getElementById('departmentSelect').value;
-
-    // Build query parameters
-    let queryParams = [];
-    if (fiscalYear) queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
-    if (department) queryParams.push('department=' + encodeURIComponent(department));
-
-    // Add timestamp to prevent caching
-    queryParams.push('_t=' + new Date().getTime());
-
-    // Build URL for budget summary API
-    const url = '/groups/finance/budget/api/budget-summary?' + queryParams.join('&');
-
-    // Fetch the data
-    fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success && data.data && data.data.length > 0) {
-                createComparisonChart(data.data);
-
-                // Show chart, hide loading
-                document.getElementById('comparisonChartLoading').style.display = 'none';
-                document.getElementById('comparisonChartContainer').style.display = 'block';
-            } else {
-                throw new Error(data.error || 'No data available for the selected filters');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading comparison data:', error);
-
-            // Show error message
-            document.getElementById('comparisonChartLoading').style.display = 'none';
-
-            const errorMsg = document.createElement('div');
-            errorMsg.className = 'alert alert-warning mt-3';
-            errorMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${error.message}`;
-
-            document.getElementById('comparisonChartContainer').innerHTML = '';
-            document.getElementById('comparisonChartContainer').appendChild(errorMsg);
-            document.getElementById('comparisonChartContainer').style.display = 'block';
-        });
-}
-
-/**
- * Create budget vs actual comparison chart
- * @param {Array} data - Budget summary data
- */
-function createComparisonChart(data) {
-    if (!data || !data.length) return;
-
-    // Group data by department and calculate totals
-    const departmentData = {};
-
-    data.forEach(item => {
-        if (!item.department) return;
-
-        if (!departmentData[item.department]) {
-            departmentData[item.department] = {
-                budget: 0,
-                actual: 0,
-                encumbrance: 0,
-                remaining: 0
-            };
-        }
-
-        departmentData[item.department].budget += item.total_budget;
-        departmentData[item.department].actual += item.total_actual;
-        departmentData[item.department].encumbrance += item.total_encumbrance;
-        departmentData[item.department].remaining += item.remaining_budget;
-    });
-
-    // Sort departments by budget and get top departments
-    const sortedDepartments = Object.keys(departmentData)
-        .sort((a, b) => departmentData[b].budget - departmentData[a].budget)
-        .slice(0, 6); // Show top 6 departments only
-
-    // Extract chart data
-    const labels = sortedDepartments;
-    const budgetValues = sortedDepartments.map(dept => departmentData[dept].budget);
-    const actualValues = sortedDepartments.map(dept => departmentData[dept].actual);
-    const encumbranceValues = sortedDepartments.map(dept => departmentData[dept].encumbrance);
-
-    // Get canvas element
-    const canvas = document.getElementById('budgetVsActualChart');
-    if (!canvas) {
-        console.error('Canvas element "budgetVsActualChart" not found');
-        return;
-    }
-
-    // Destroy existing chart if any
-    try {
-        if (typeof Chart.getChart === 'function') {
-            const existingChart = Chart.getChart(canvas);
-            if (existingChart) {
-                existingChart.destroy();
-            }
-        } else if (chartInstances.comparison) {
-            chartInstances.comparison.destroy();
-        }
-    } catch (e) {
-        console.warn('Error destroying existing chart:', e);
-    }
-
-    // Determine if dark mode is active
-    const isDarkMode = document.documentElement.classList.contains('dark-mode');
-
-    // Chart colors
-    const textColor = isDarkMode ? '#E0E0E0' : '#333333';
-    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-
-    // Create the chart
-    try {
-        chartInstances.comparison = new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Budget',
-                        data: budgetValues,
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Actual',
-                        data: actualValues,
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Encumbrance',
-                        data: encumbranceValues,
-                        backgroundColor: 'rgba(255, 206, 86, 0.7)',
-                        borderColor: 'rgba(255, 206, 86, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                indexAxis: 'y', // Horizontal bar chart
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Budget vs. Actual by Department',
-                        color: textColor,
-                        font: {
-                            size: 16,
-                            weight: 'bold'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                const label = context.dataset.label || '';
-                                const value = context.raw;
-                                return `${label}: ${formatCurrency(value)}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: false,
-                        title: {
-                            display: true,
-                            text: 'Amount',
-                            color: textColor
-                        },
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor,
-                            callback: function (value) {
-                                return formatCurrency(value);
-                            }
-                        }
-                    },
-                    y: {
-                        stacked: false,
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor
-                        }
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error creating comparison chart:', error);
-        document.getElementById('comparisonChartContainer').innerHTML =
-            `<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Error creating chart: ${error.message}</div>`;
-    }
-}
-
-/**
- * Load budget summary data and populate table
- */
-function loadBudgetSummary() {
-    // Show loading indicator
-    document.getElementById('budgetSummaryLoading').style.display = 'block';
-    document.getElementById('budgetSummaryContainer').style.display = 'none';
-
-    // Get filter values
-    const fiscalYear = document.getElementById('fiscalYearSelect').value;
-    const department = document.getElementById('departmentSelect').value;
-
-    // Build query string
-    let queryParams = [];
-    if (fiscalYear) queryParams.push('fiscal_year=' + encodeURIComponent(fiscalYear));
-    if (department) queryParams.push('department=' + encodeURIComponent(department));
-
-    // Add timestamp to prevent caching
-    queryParams.push('_t=' + new Date().getTime());
-
-    // Build URL
-    const url = '/groups/finance/budget/api/budget-summary?' + queryParams.join('&');
-
-    // Fetch the data
-    fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Populate table
-                populateBudgetSummaryTable(data.data);
-
-                // Show table, hide loading
-                document.getElementById('budgetSummaryLoading').style.display = 'none';
-                document.getElementById('budgetSummaryContainer').style.display = 'block';
-            } else {
