@@ -87,6 +87,13 @@ def index():
                 "url": "/groups/utilities_billing/cut_nonpayment/",
                 "icon": "fas fa-cut",
             },
+            {
+                "id": "cycle_info",
+                "name": "Billing Cycle Information",
+                "description": "Accounts on each billing cycle",
+                "url": "/groups/utilities_billing/cycle_info/",
+                "icon": "fa-solid fa-circle-info",
+            },
             # Add more reports as they are implemented
         ]
 

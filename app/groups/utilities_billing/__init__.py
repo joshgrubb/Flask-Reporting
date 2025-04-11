@@ -67,3 +67,7 @@ bp.register_blueprint(credit_balance_bp)
 from app.groups.utilities_billing.cut_nonpayment import bp as cut_nonpayment_bp  # noqa
 
 bp.register_blueprint(cut_nonpayment_bp)
+
+from app.groups.utilities_billing.cycle_info import bp as cycle_info_bp  # noqa
+
+bp.register_blueprint(cycle_info_bp)
