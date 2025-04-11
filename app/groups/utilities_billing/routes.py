@@ -85,7 +85,7 @@ def index():
                 "name": "Cut for Nonpayment",
                 "description": "View accounts being cut for nonpayment",
                 "url": "/groups/utilities_billing/cut_nonpayment/",
-                "icon": "fas fa-dollar-sign",
+                "icon": "fas fa-cut",
             },
             # Add more reports as they are implemented
         ]

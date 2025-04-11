@@ -63,3 +63,7 @@ bp.register_blueprint(vflex_bp)
 from app.groups.utilities_billing.credit_balance import bp as credit_balance_bp  # noqa
 
 bp.register_blueprint(credit_balance_bp)
+
+from app.groups.utilities_billing.cut_nonpayment import bp as cut_nonpayment_bp  # noqa
+
+bp.register_blueprint(cut_nonpayment_bp)
