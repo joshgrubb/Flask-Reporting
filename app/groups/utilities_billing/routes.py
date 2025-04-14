@@ -94,6 +94,7 @@ def index():
                 "url": "/groups/utilities_billing/cycle_info/",
                 "icon": "fas fa-sync-alt",
             },
+            
             # Add more reports as they are implemented
         ]
 
