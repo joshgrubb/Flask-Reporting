@@ -101,6 +101,13 @@ def index():
                 "url": "/groups/utilities_billing/cycle_info/",
                 "icon": "fas fa-sync-alt",
             },
+            {
+                "id": "high_balance",
+                "name": "High Balance Report",
+                "description": "View accounts with a high balance",
+                "url": "/groups/utilities_billing/high_balance/",
+                "icon": "fas fa-sync-alt",
+            },
             # Add more reports as they are implemented
         ]
 

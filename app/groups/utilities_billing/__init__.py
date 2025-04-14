@@ -76,3 +76,7 @@ bp.register_blueprint(cycle_info_bp)
 from app.groups.utilities_billing.dollar_search import bp as dollar_search_bp  # noqa
 
 bp.register_blueprint(dollar_search_bp)
+
+from app.groups.utilities_billing.high_balance import bp as high_balance_bp  # noqa
+
+bp.register_blueprint(high_balance_bp)

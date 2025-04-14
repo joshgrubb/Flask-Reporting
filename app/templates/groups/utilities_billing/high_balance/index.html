@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block cdn_resources %}
+{{ include_cdn(bundles=["datatables", "chartjs", "multiselect", "select2"]) }}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/utilities_billing/">Utilities Billing</a></li>
+                <li class="breadcrumb-item active">High Balance</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-dollar-sign"></i> {{ title }}</h1>
+        <p class="lead">View accounts with balances exceeding the specified threshold.</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="filters">
+            <form id="reportFilters">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="balanceInput" class="form-label">Balance Threshold</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="balanceInput" name="balance"
+                                value="{{ default_balance }}" step="10" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="accountTypeSelect" class="form-label">Account Types</label>
+                        <select class="form-select select2-multi" id="accountTypeSelect" name="account_types" multiple>
+                            {% for type in account_types %}
+                            <option value="{{ type.TypeID }}" {% if type.TypeID=='477' %}selected{% endif %}>{{
+                                type.TypeName }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" id="applyFilters" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Apply Filter
+                        </button>
+                        <button type="button" id="resetFilters" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                        <button type="button" id="exportData" class="btn btn-success float-end">
+                            <i class="fas fa-file-export"></i> Export to CSV
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-users"></i> Total Accounts
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalAccounts">-</h2>
+                <p class="text-muted" id="balanceThresholdInfo">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-money-bill-wave"></i> Total Balance
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalBalance">-</h2>
+                <p class="text-muted">Sum of all balances</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-calculator"></i> Average Balance
+                </h5>
+                <h2 class="mt-3 mb-0" id="avgBalance">-</h2>
+                <p class="text-muted">Per account</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-line"></i> Highest Balance
+                </h5>
+                <h2 class="mt-3 mb-0" id="maxBalance">-</h2>
+                <p class="text-muted">Largest account balance</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Balance Distribution Chart -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Balance Distribution by Account Type</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="balanceDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">High Balance Accounts</h5>
+            </div>
+            <div class="card-body">
+                <div id="dataTableContainer" class="loading">
+                    <table id="accountsTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Account Number</th>
+                                <th>Balance</th>
+                                <th>Account Type</th>
+                                <th>Address</th>
+                                <th>Last Name</th>
+                                <th>First Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Custom JS for this report -->
+<script src="{{ url_for('static', filename='js/utilities_billing/high_balance.js') }}"></script>
+{% endblock %}
