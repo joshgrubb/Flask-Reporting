@@ -108,6 +108,13 @@ def index():
                 "url": "/groups/utilities_billing/high_balance/",
                 "icon": "fas fa-sync-alt",
             },
+            {
+                "id": "late_fees",
+                "name": "Late Fees Report",
+                "description": "View accounts with a late fee",
+                "url": "/groups/utilities_billing/late_fees/",
+                "icon": "fa-solid fa-calendar",
+            },
             # Add more reports as they are implemented
         ]
 

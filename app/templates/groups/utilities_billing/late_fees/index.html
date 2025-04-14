@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block cdn_resources %}
+{{ include_cdn(bundles=["datatables", "chartjs", "datepicker", "select2"]) }}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/utilities_billing/">Utilities Billing</a></li>
+                <li class="breadcrumb-item active">Late Fees</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-exclamation-circle"></i> {{ title }}</h1>
+        <p class="lead">Find accounts eligible for late fees based on billing profiles.</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="filters">
+            <form id="reportFilters">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label for="billingProfileSelect" class="form-label">Billing Profiles</label>
+                        <select class="form-select select2-single" id="billingProfileSelect" name="billing_profile">
+                            {% for profile in billing_profiles %}
+                            <option value="{{ profile.BillingProfileID }}">
+                                {{ profile.BillingProfileCode }} - {{ profile.BillingProfileDescription }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" id="applyFilters" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Apply Filter
+                        </button>
+                        <button type="button" id="resetFilters" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                        <button type="button" id="exportData" class="btn btn-success float-end">
+                            <i class="fas fa-file-export"></i> Export to CSV
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4" id="summaryStats" style="display: none;">
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-users"></i> Total Accounts
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalAccounts">-</h2>
+                <p class="text-muted" id="billingProfileInfo">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-money-bill-wave"></i> Total Balance
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalBalance">-</h2>
+                <p class="text-muted">Past-due balance</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-calculator"></i> Average Balance
+                </h5>
+                <h2 class="mt-3 mb-0" id="avgBalance">-</h2>
+                <p class="text-muted">Per account</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-line"></i> Highest Balance
+                </h5>
+                <h2 class="mt-3 mb-0" id="maxBalance">-</h2>
+                <p class="text-muted">Largest account balance</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Balance Distribution Chart -->
+<div class="row mb-4" id="chartSection" style="display: none;">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Balance Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="balanceDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initial Message -->
+<div class="row mb-4" id="initialMessage">
+    <div class="col">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Please select a billing profile to view accounts eligible for late fees.
+        </div>
+    </div>
+</div>
+
+<!-- No Results Message -->
+<div class="row mb-4" id="noResultsMessage" style="display: none;">
+    <div class="col">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> No accounts found eligible for late fees with the selected
+            billing profile.
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Accounts Eligible for Late Fees</h5>
+            </div>
+            <div class="card-body">
+                <div id="dataTableContainer" class="loading" style="display: none;">
+                    <table id="accountsTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Account Number</th>
+                                <th>Balance</th>
+                                <th>Due Date</th>
+                                <th>Customer Name</th>
+                                <th>Email Address</th>
+                                <th>Phone Numbers</th>
+                                <th>Exempt Status</th>
+                                <th>Account Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Information About Report -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">About This Report</h5>
+            </div>
+            <div class="card-body">
+                <p>This report identifies accounts eligible for late fees according to the following criteria:</p>
+                <ul>
+                    <li>Account has an outstanding balance greater than $5</li>
+                    <li>Current due date is within the last 29 days</li>
+                    <li>Bill has not been paid in full</li>
+                    <li>Account is active</li>
+                    <li>Account is not exempt from penalties</li>
+                    <li>Account does not have an active budget billing plan</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Custom JS for this report -->
+<script src="{{ url_for('static', filename='js/utilities_billing/late_fees.js') }}"></script>
+{% endblock %}

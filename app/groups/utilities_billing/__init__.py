@@ -80,3 +80,7 @@ bp.register_blueprint(dollar_search_bp)
 from app.groups.utilities_billing.high_balance import bp as high_balance_bp  # noqa
 
 bp.register_blueprint(high_balance_bp)
+
+from app.groups.utilities_billing.late_fees import bp as late_fees_bp  # noqa
+
+bp.register_blueprint(late_fees_bp)
