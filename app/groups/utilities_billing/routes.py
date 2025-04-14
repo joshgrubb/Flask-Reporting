@@ -60,6 +60,13 @@ def index():
                 "icon": "fas fa-search-dollar",
             },
             {
+                "id": "dollar_search",
+                "name": "Dollar Search",
+                "description": "Search for transactions by specific dollar amount across all payment sources",
+                "url": "/groups/utilities_billing/dollar_search/",
+                "icon": "fas fa-dollar-sign",
+            },
+            {
                 "id": "cash_only_accounts",
                 "name": "Cash Only Accounts",
                 "description": "Utility accounts restricted to cash only, no checks",
@@ -94,7 +101,6 @@ def index():
                 "url": "/groups/utilities_billing/cycle_info/",
                 "icon": "fas fa-sync-alt",
             },
-            
             # Add more reports as they are implemented
         ]
 
@@ -110,5 +116,5 @@ def index():
         )
 
     except Exception as e:
-        logger.error(f"Error rendering Utilities Billing dashboard: {str(e)}")
+        logger.error("Error rendering Utilities Billing dashboard: %s", str(e))
         return render_template("error.html", error=str(e))

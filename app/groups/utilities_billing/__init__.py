@@ -71,3 +71,8 @@ bp.register_blueprint(cut_nonpayment_bp)
 from app.groups.utilities_billing.cycle_info import bp as cycle_info_bp  # noqa
 
 bp.register_blueprint(cycle_info_bp)
+
+# Import and register dollar search report blueprint
+from app.groups.utilities_billing.dollar_search import bp as dollar_search_bp  # noqa
+
+bp.register_blueprint(dollar_search_bp)
