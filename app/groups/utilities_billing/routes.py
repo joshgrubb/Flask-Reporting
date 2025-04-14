@@ -89,19 +89,23 @@ def index():
             },
             {
                 "id": "cycle_info",
-                "name": "Billing Cycle Information",
-                "description": "Accounts on each billing cycle",
+                "name": "Cycle Info Report",
+                "description": "View account information organized by billing cycle",
                 "url": "/groups/utilities_billing/cycle_info/",
-                "icon": "fa-solid fa-circle-info",
+                "icon": "fas fa-sync-alt",
             },
             # Add more reports as they are implemented
         ]
 
         # Log that we're rendering the dashboard
-        logger.info("Rendering Utilities Billing dashboard with %d reports", len(reports))
+        logger.info(
+            "Rendering Utilities Billing dashboard with %d reports", len(reports)
+        )
 
         return render_template(
-            "utilities_billing/dashboard.html", title="Utilities Billing Reports Dashboard", reports=reports
+            "utilities_billing/dashboard.html",
+            title="Utilities Billing Reports Dashboard",
+            reports=reports,
         )
 
     except Exception as e:

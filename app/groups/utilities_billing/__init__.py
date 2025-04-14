@@ -46,6 +46,7 @@ bp.register_blueprint(amount_billed_search_bp)
 from app.groups.utilities_billing.trending import (
     bp as trending_bp,
 )  # noqa
+
 bp.register_blueprint(trending_bp)
 
 from app.groups.utilities_billing.cash_only_accounts import (
@@ -58,8 +59,6 @@ from app.groups.utilities_billing.vflex import bp as vflex_bp  # noqa
 
 bp.register_blueprint(vflex_bp)
 
-
-# Import and register credit balance report blueprint
 from app.groups.utilities_billing.credit_balance import bp as credit_balance_bp  # noqa
 
 bp.register_blueprint(credit_balance_bp)
@@ -68,6 +67,7 @@ from app.groups.utilities_billing.cut_nonpayment import bp as cut_nonpayment_bp 
 
 bp.register_blueprint(cut_nonpayment_bp)
 
-# from app.groups.utilities_billing.cycle_info import bp as cycle_info_bp  # noqa
+# Import and register cycle info report blueprint
+from app.groups.utilities_billing.cycle_info import bp as cycle_info_bp  # noqa
 
-# bp.register_blueprint(cycle_info_bp)
+bp.register_blueprint(cycle_info_bp)
