@@ -122,6 +122,13 @@ def index():
                 "url": "/groups/utilities_billing/water_no_sewer/",
                 "icon": "fa-solid fa-glass-water",
             },
+            {
+                "id": "work_order_counts",
+                "name": "Work Order Counts",
+                "description": "View work order counts by user",
+                "url": "/groups/utilities_billing/work_order_counts/",
+                "icon": "fas fa-tasks",
+            },
             # Add more reports as they are implemented
         ]
 

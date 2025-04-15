@@ -88,3 +88,9 @@ bp.register_blueprint(late_fees_bp)
 from app.groups.utilities_billing.water_no_sewer import bp as water_no_sewer_bp  # noqa
 
 bp.register_blueprint(water_no_sewer_bp)
+
+from app.groups.utilities_billing.work_order_counts import (
+    bp as work_order_counts_bp,
+)  # noqa
+
+bp.register_blueprint(work_order_counts_bp)
