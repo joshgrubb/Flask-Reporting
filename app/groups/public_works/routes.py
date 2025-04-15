@@ -38,6 +38,13 @@ def index():
                 "url": "/groups/public_works/vehicle_fleet/",
                 "icon": "fa-solid fa-car",
             },
+            {
+                "id": "fleet_costs",
+                "name": "Fleet Costs by Department",
+                "description": "Vehicle Fleet costs by department",
+                "url": "/groups/public_works/fleet_costs/",
+                "icon": "fa-solid fa-dollar-sign",
+            },
             # Add more reports as they are implemented
         ]
 
