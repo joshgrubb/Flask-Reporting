@@ -18,7 +18,7 @@ UTILITY_DASHBOARD_REPORT = {
     "id": "utility_dashboard",
     "name": "Utility Billing Dashboard",
     "description": "Overview of utility billing metrics and KPIs",
-    "embed_url": "https://app.powerbi.com/view?r=eyJrIjoiN2ZkZTU0YzYtMDg2NC00MDFkLTgwY2MtMWE3N2Q3MjhiY2MxIiwidCI6ImM5OTZiMGQwLWRlZTgtNGM5NC1iMDllLTM0NTc5ODM0OGYxYSIsImMiOjF9&pageName=90ec2537a310d208e68c",
+    "embed_url": "https://app.powerbi.com/view?r=eyJrIjoiN2ZkZTU0YzYtMDg2NC00MDFkLTgwY2MtMWE3N2Q3MjhiY2MxIiwidCI6ImM5OTZiMGQwLWRlZTgtNGM5NC1iMDllLTM0NTc5ODM0OGYxYSIsImMiOjF9",
     "icon": "fas fa-file-invoice-dollar",
     "group": "Utilities Billing",
 }

@@ -39,8 +39,12 @@ def index():
         # Extract storeroom values from results
         storerooms = [room.get("STORERM") for room in storeroom_results]
 
-        # Use the first storeroom as default if available
-        default_storeroom = storerooms[0] if storerooms else ""
+        # Use "WAREHOUSE" as default if available, otherwise the first storeroom from the list.
+        default_storeroom = (
+            "WAREHOUSE"
+            if "WAREHOUSE" in storerooms
+            else (storerooms[0] if storerooms else "")
+        )
 
         return render_template(
             "groups/warehouse/stock_by_storeroom/index.html",
