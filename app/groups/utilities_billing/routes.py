@@ -115,6 +115,13 @@ def index():
                 "url": "/groups/utilities_billing/late_fees/",
                 "icon": "fa-solid fa-calendar",
             },
+            {
+                "id": "water_no_sewer",
+                "name": "Water No Sewer",
+                "description": "View accounts with water but no sewer service",
+                "url": "/groups/utilities_billing/water_no_sewer/",
+                "icon": "fa-solid fa-glass-water",
+            },
             # Add more reports as they are implemented
         ]
 
