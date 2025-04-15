@@ -5,19 +5,40 @@
  * including loading data, initializing charts, and handling user interactions.
  */
 
+// Define globally
+function applyStatusFilter(filterId) {
+    const table = $('#stockTable').DataTable();
+    table.search('').columns().search('').draw();
+    if (filterId === 'filterUnderMin') {
+        table.column(7).search('Under Min').draw();
+    } else if (filterId === 'filterNormal') {
+        table.column(7).search('Normal').draw();
+    } else if (filterId === 'filterOverMax') {
+        table.column(7).search('Over Max').draw();
+    }
+    updateFilteredCount(table.rows({ search: 'applied' }).count());
+}
+
+function updateFilteredCount(count) {
+    const storeroom = $('#storeroomSelect').val();
+    const totalCount = $('#stockTable').DataTable().rows().count();
+    if (count === totalCount) {
+        $('#storeroomInfo').text(`Storeroom: ${storeroom}`);
+    } else {
+        $('#storeroomInfo').text(`Storeroom: ${storeroom} (Showing ${count} of ${totalCount} items)`);
+    }
+}
+
 // Document ready function
 $(document).ready(function () {
-    // Initial data load
     loadData();
-
-    // Event handlers
-    $('#applyFilters').click(function () {
-        loadData();
+    $('#filterAll, #filterUnderMin, #filterNormal, #filterOverMax').click(function () {
+        $('#filterAll, #filterUnderMin, #filterNormal, #filterOverMax').removeClass('active');
+        $(this).addClass('active');
+        applyStatusFilter($(this).attr('id'));
     });
-
-    $('#exportData').click(function () {
-        exportReportData();
-    });
+    $('#applyFilters').click(loadData);
+    $('#exportData').click(exportReportData);
 });
 
 /**
@@ -31,6 +52,8 @@ function loadData() {
         showError('Please select a storeroom');
         return;
     }
+    $('#filterAll, #filterUnderMin, #filterNormal, #filterOverMax').removeClass('active');
+    $('#filterAll').addClass('active');
 
     // Show loading indicators
     $('#dataTableContainer').addClass('loading');
@@ -191,6 +214,20 @@ function initDataTable(data) {
 
     // Initialize DataTable
     const table = $('#stockTable').DataTable(dataTableOptions);
+
+    const activeFilterId = $('.btn-group button.active').attr('id');
+    if (activeFilterId && activeFilterId !== 'filterAll') {
+        // Re-apply the active filter after redrawing
+        setTimeout(() => {
+            applyStatusFilter(activeFilterId);
+        }, 100);
+    }
+
+    // Add this event handler to the DataTable
+    table.on('draw', function () {
+        const visibleRows = table.rows({ search: 'applied' }).count();
+        updateFilteredCount(visibleRows);
+    });
 
     // Window resize handler
     $(window).on('resize', function () {

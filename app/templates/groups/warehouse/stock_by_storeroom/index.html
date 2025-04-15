@@ -28,6 +28,7 @@
         <div class="filters">
             <form id="reportFilters">
                 <div class="row g-3 align-items-end">
+                    <!-- Storeroom Dropdown -->
                     <div class="col-md-4">
                         <label for="storeroomSelect" class="form-label">Select Storeroom</label>
                         <select class="form-select" id="storeroomSelect" name="storeroom">
@@ -38,11 +39,27 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-8">
+                    <!-- Filter Buttons -->
+                    <div class="col-md-4">
+                        <!-- Optional empty label to maintain vertical alignment -->
+                        <label class="form-label d-block">&nbsp;</label>
+                        <div class="btn-group" role="group" aria-label="Stock Level Filters">
+                            <button type="button" class="btn btn-outline-primary active" id="filterAll">All
+                                Items</button>
+                            <button type="button" class="btn btn-outline-danger" id="filterUnderMin">Under
+                                Minimum</button>
+                            <button type="button" class="btn btn-outline-success" id="filterNormal">Normal
+                                Range</button>
+                            <button type="button" class="btn btn-outline-warning" id="filterOverMax">Over
+                                Maximum</button>
+                        </div>
+                    </div>
+                    <!-- Apply/Export Buttons -->
+                    <div class="col-md-4 text-end">
                         <button type="button" id="applyFilters" class="btn btn-primary">
                             <i class="fas fa-filter"></i> Apply Filter
                         </button>
-                        <button type="button" id="exportData" class="btn btn-success float-end">
+                        <button type="button" id="exportData" class="btn btn-success">
                             <i class="fas fa-file-export"></i> Export to CSV
                         </button>
                     </div>
@@ -51,6 +68,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- Summary Stats -->
 <div class="row mb-4">
