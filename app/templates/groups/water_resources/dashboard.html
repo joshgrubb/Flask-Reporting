@@ -1,0 +1,42 @@
+<!-- app/templates/groups/water_resources/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<!-- Search Filter Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <input type="text" id="reportSearch" class="form-control" placeholder="Search Reports..."
+            onkeyup="filterReports()">
+    </div>
+</div>
+
+<!-- Reports Tiles -->
+<div class="row" id="reportsContainer">
+    {% for report in reports %}
+    <div class="col-md-3 col-sm-6 mb-4 report-tile">
+        <a href="{{ report.url }}" class="text-decoration-none">
+            <div class="card h-100 card-hover text-center report-card">
+                <div class="card-body">
+                    <i class="{{ report.icon }} fa-3x mb-3" aria-hidden="true"></i>
+                    <h5 class="card-title">{{ report.name }}</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Interactive Search/Filter Script -->
+<script>
+    function filterReports() {
+        var input = document.getElementById("reportSearch").value.toLowerCase();
+        var tiles = document.getElementsByClassName("report-tile");
+        for (var i = 0; i < tiles.length; i++) {
+            let titleText = tiles[i].querySelector('.card-title').innerText.toLowerCase();
+            tiles[i].style.display = titleText.indexOf(input) > -1 ? "" : "none";
+        }
+    }
+</script>
+{% endblock %}

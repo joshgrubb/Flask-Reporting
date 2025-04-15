@@ -64,6 +64,14 @@ def index():
                 "icon": "fas fa-warehouse",
                 "enabled": True,
             },
+            {
+                "id": "water_resources",
+                "name": "Water Resources",
+                "description": "Reports related to water resources",
+                "url": "/groups/water_resources/",
+                "icon": "fa-solid fa-water",
+                "enabled": True,
+            },
         ]
 
         # Log that we're rendering the dashboard
