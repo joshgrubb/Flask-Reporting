@@ -1,3 +1,4 @@
+# app/groups/warehouse/routes.py (updated)
 """
 Warehouse Module Routes.
 
@@ -44,6 +45,13 @@ def index():
                 "description": "View inventory audit transactions showing cost and quantity changes",
                 "url": "/groups/warehouse/audit_transactions/",
                 "icon": "fas fa-file-invoice-dollar",
+            },
+            {
+                "id": "stock_by_storeroom",
+                "name": "Stock By Storeroom",
+                "description": "View inventory items by storeroom location with min/max quantity analysis",
+                "url": "/groups/warehouse/stock_by_storeroom/",
+                "icon": "fas fa-warehouse",
             },
             # Add more reports as they are implemented
         ]

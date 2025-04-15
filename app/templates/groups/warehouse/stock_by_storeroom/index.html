@@ -1,0 +1,185 @@
+<!-- app/templates/groups/warehouse/stock_by_storeroom/index.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block cdn_resources %}
+{{ include_cdn(bundles=["datatables", "chartjs"]) }}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/warehouse/">Warehouse</a></li>
+                <li class="breadcrumb-item active">Stock By Storeroom</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-warehouse"></i> {{ title }}</h1>
+        <p class="lead">View inventory items by storeroom location with min/max quantity analysis.</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="filters">
+            <form id="reportFilters">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="storeroomSelect" class="form-label">Select Storeroom</label>
+                        <select class="form-select" id="storeroomSelect" name="storeroom">
+                            {% for storeroom in storerooms %}
+                            <option value="{{ storeroom }}" {% if storeroom==default_storeroom %}selected{% endif %}>
+                                {{ storeroom }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <button type="button" id="applyFilters" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Apply Filter
+                        </button>
+                        <button type="button" id="exportData" class="btn btn-success float-end">
+                            <i class="fas fa-file-export"></i> Export to CSV
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-boxes"></i> Total Items
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalItems">-</h2>
+                <p class="text-muted" id="storeroomInfo">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100 border-danger">
+            <div class="card-body">
+                <h5 class="card-title text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Under Min
+                </h5>
+                <h2 class="mt-3 mb-0 text-danger" id="underMinItems">-</h2>
+                <p class="text-muted">Items below minimum quantity</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100 border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success">
+                    <i class="fas fa-check-circle"></i> Normal Range
+                </h5>
+                <h2 class="mt-3 mb-0 text-success" id="normalItems">-</h2>
+                <p class="text-muted">Items within min/max range</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100 border-warning">
+            <div class="card-body">
+                <h5 class="card-title text-warning">
+                    <i class="fas fa-arrow-circle-up"></i> Over Max
+                </h5>
+                <h2 class="mt-3 mb-0 text-warning" id="overMaxItems">-</h2>
+                <p class="text-muted">Items exceeding maximum quantity</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Section -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Stock Level Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="stockLevelChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Storeroom Inventory</h5>
+            </div>
+            <div class="card-body">
+                <div id="dataTableContainer" class="loading">
+                    <table id="stockTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Material ID</th>
+                                <th>Description</th>
+                                <th>Storeroom</th>
+                                <th>Min Quantity</th>
+                                <th>Stock On Hand</th>
+                                <th>Max Quantity</th>
+                                <th>Under Min</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About Section -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">About This Report</h5>
+            </div>
+            <div class="card-body">
+                <p>This report displays inventory items for a selected storeroom with the following information:</p>
+                <ul>
+                    <li><strong>Material ID:</strong> The unique identifier for the inventory item</li>
+                    <li><strong>Description:</strong> The description of the inventory item</li>
+                    <li><strong>Min Quantity:</strong> The minimum quantity that should be maintained</li>
+                    <li><strong>Stock On Hand:</strong> The current quantity in inventory</li>
+                    <li><strong>Max Quantity:</strong> The maximum quantity that should be maintained</li>
+                    <li><strong>Under Min:</strong> The quantity below minimum (negative values indicate stock is above
+                        minimum)</li>
+                </ul>
+                <p>Items are color-coded in the table based on their status:</p>
+                <ul>
+                    <li><span class="text-danger"><strong>Red:</strong></span> Below minimum quantity</li>
+                    <li><span class="text-success"><strong>Green:</strong></span> Within minimum and maximum quantity
+                    </li>
+                    <li><span class="text-warning"><strong>Yellow:</strong></span> Above maximum quantity</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Custom JS for this report -->
+<script src="{{ url_for('static', filename='js/warehouse/stock_by_storeroom.js') }}"></script>
+{% endblock %}
