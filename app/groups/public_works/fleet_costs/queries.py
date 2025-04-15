@@ -239,3 +239,127 @@ def get_cost_summary_by_vehicle(start_date=None, end_date=None, department=None)
         f" for department {department}" if department else "",
     )
     return query, tuple(params), "cw"
+
+
+def get_costs_over_time(
+    start_date=None, end_date=None, department=None, interval="month"
+):
+    """
+    Get fleet costs aggregated over time periods.
+
+    Args:
+        start_date (datetime, optional): Start date for the report period.
+            If None, defaults to 90 days ago.
+        end_date (datetime, optional): End date for the report period.
+            If None, defaults to current date.
+        department (str, optional): Filter by specific department.
+            If None, returns data for all departments.
+        interval (str, optional): Time interval for aggregation.
+            Options: 'day', 'week', 'month', 'quarter', 'year'.
+            Defaults to 'month'.
+
+    Returns:
+        tuple: (SQL query string, query parameters, database key)
+    """
+    # Use default dates if not provided
+    if start_date is None or end_date is None:
+        start_date, end_date = get_default_date_range()
+
+    # For time-based analysis, expand the date range slightly to ensure complete intervals
+    if interval == "month":
+        # Extend to beginning of start month and end of end month
+        start_date = start_date.replace(day=1)
+        if end_date.month == 12:
+            end_date = end_date.replace(
+                year=end_date.year + 1, month=1, day=1
+            ) - timedelta(days=1)
+        else:
+            end_date = end_date.replace(month=end_date.month + 1, day=1) - timedelta(
+                days=1
+            )
+    elif interval == "quarter":
+        # Extend to beginning of start quarter and end of end quarter
+        start_quarter_month = ((start_date.month - 1) // 3) * 3 + 1
+        start_date = start_date.replace(month=start_quarter_month, day=1)
+
+        end_quarter_month = ((end_date.month - 1) // 3) * 3 + 1
+        end_quarter_last_month = end_quarter_month + 2
+        if end_quarter_last_month > 12:
+            end_date = end_date.replace(
+                year=end_date.year + 1, month=(end_quarter_last_month - 12), day=1
+            ) - timedelta(days=1)
+        else:
+            if end_quarter_last_month == 12:
+                end_date = end_date.replace(
+                    year=end_date.year + 1, month=1, day=1
+                ) - timedelta(days=1)
+            else:
+                end_date = end_date.replace(
+                    month=end_quarter_last_month + 1, day=1
+                ) - timedelta(days=1)
+    elif interval == "year":
+        # Extend to beginning and end of years
+        start_date = start_date.replace(month=1, day=1)
+        end_date = end_date.replace(year=end_date.year + 1, month=1, day=1) - timedelta(
+            days=1
+        )
+
+    # Convert dates to strings for SQL
+    start_date_str = format_date_for_query(start_date)
+    end_date_str = format_date_for_query(end_date)
+
+    # Initialize parameters list
+    params = [start_date_str, end_date_str]
+
+    # Determine date grouping based on interval
+    date_group_expr = ""
+    if interval == "day":
+        date_group_expr = "CONVERT(DATE, WO.[ACTUALFINISHDATE])"
+    elif interval == "week":
+        date_group_expr = "DATEADD(DAY, -DATEPART(WEEKDAY, WO.[ACTUALFINISHDATE]) + 1, CONVERT(DATE, WO.[ACTUALFINISHDATE]))"
+    elif interval == "month":
+        date_group_expr = "DATEFROMPARTS(YEAR(WO.[ACTUALFINISHDATE]), MONTH(WO.[ACTUALFINISHDATE]), 1)"
+    elif interval == "quarter":
+        date_group_expr = "DATEFROMPARTS(YEAR(WO.[ACTUALFINISHDATE]), ((DATEPART(QUARTER, WO.[ACTUALFINISHDATE]) - 1) * 3) + 1, 1)"
+    elif interval == "year":
+        date_group_expr = "DATEFROMPARTS(YEAR(WO.[ACTUALFINISHDATE]), 1, 1)"
+    else:
+        # Default to monthly if invalid interval provided
+        date_group_expr = "DATEFROMPARTS(YEAR(WO.[ACTUALFINISHDATE]), MONTH(WO.[ACTUALFINISHDATE]), 1)"
+
+    # Build the base query
+    query = f"""
+    SELECT 
+        {date_group_expr} AS TimePeriod,
+        COUNT(DISTINCT WO.[WORKORDERID]) AS WorkOrderCount,
+        SUM(WO.[WOLABORCOST]) AS TotalLaborCost,
+        SUM(WO.[WOMATCOST]) AS TotalMaterialCost,
+        SUM(WO.[WOLABORCOST] + WO.[WOMATCOST]) AS TotalCost
+    FROM [CW].[azteca].[WORKORDER] WO
+    LEFT JOIN [CW].[azteca].[WORKORDERENTITY] WOE
+        ON WOE.[WORKORDERID] = WO.[WORKORDERID]
+    LEFT JOIN [TOC_SDE].[GISMGR].[MOTOR_FLEET] MF
+        ON MF.[EUID] = WOE.[ENTITYUID]
+    WHERE WO.[WOCATEGORY] = 'MF'
+        AND WO.[ACTUALFINISHDATE] BETWEEN ? AND ?
+    """
+
+    # Add department filter if provided
+    if department:
+        query += " AND MF.[Department] = ?"
+        params.append(department)
+
+    # Complete the query with GROUP BY and ORDER BY
+    query += f"""
+    GROUP BY {date_group_expr}
+    ORDER BY {date_group_expr}
+    """
+
+    logger.info(
+        "Generated time-based cost query for period %s to %s, interval %s%s",
+        start_date_str,
+        end_date_str,
+        interval,
+        f", department {department}" if department else "",
+    )
+    return query, tuple(params), "cw"

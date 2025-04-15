@@ -19,6 +19,7 @@ from app.groups.public_works.fleet_costs.queries import (
     get_cost_summary_by_department,
     get_cost_summary_by_vehicle,
     format_date_for_query,
+    get_costs_over_time,
 )
 
 # Configure logger
@@ -324,4 +325,74 @@ def export_report():
 
     except Exception as e:
         logger.error("Error exporting fleet costs data: %s", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route("/time-series")
+def get_time_series_data():
+    """
+    Get costs over time data as JSON for AJAX requests.
+
+    Returns:
+        Response: JSON response with time series data.
+    """
+    try:
+        # Get date filters, department, and interval from request
+        start_date_str = request.args.get("start_date", "")
+        end_date_str = request.args.get("end_date", "")
+        department = request.args.get("department", "")
+        interval = request.args.get("interval", "month")
+
+        # Validate interval
+        valid_intervals = ["day", "week", "month", "quarter", "year"]
+        if interval not in valid_intervals:
+            interval = "month"  # Default to month if invalid
+
+        # Parse dates if provided
+        if start_date_str and end_date_str:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            start_date = start_date.replace(hour=0, minute=0, second=0)
+
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+        else:
+            # Use default dates (last 90 days)
+            end_date = datetime.now().replace(hour=23, minute=59, second=59)
+            start_date = (end_date - timedelta(days=90)).replace(
+                hour=0, minute=0, second=0
+            )
+
+        # Get query and parameters
+        query, params, db_key = get_costs_over_time(
+            start_date, end_date, department if department else None, interval
+        )
+
+        # Execute query
+        results = execute_query(query, params, db_key=db_key)
+
+        # Process date fields for JSON serialization
+        for row in results:
+            if row.get("TimePeriod"):
+                row["TimePeriod"] = (
+                    row["TimePeriod"].isoformat()
+                    if hasattr(row["TimePeriod"], "isoformat")
+                    else row["TimePeriod"]
+                )
+
+        # Return data as JSON
+        return jsonify(
+            {
+                "success": True,
+                "data": results,
+                "filters": {
+                    "start_date": start_date.strftime("%Y-%m-%d"),
+                    "end_date": end_date.strftime("%Y-%m-%d"),
+                    "department": department,
+                    "interval": interval,
+                },
+            }
+        )
+
+    except Exception as e:
+        logger.error("Error fetching time series data: %s", str(e))
         return jsonify({"success": False, "error": str(e)}), 500

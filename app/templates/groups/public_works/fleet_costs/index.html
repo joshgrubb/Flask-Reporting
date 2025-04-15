@@ -131,6 +131,12 @@
                     <i class="fas fa-car"></i> Vehicle Summary
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="time-series-tab" data-bs-toggle="tab" data-bs-target="#time-series"
+                    type="button" role="tab" aria-controls="time-series" aria-selected="false">
+                    <i class="fas fa-chart-line"></i> Costs Over Time
+                </button>
+            </li>
         </ul>
 
         <div class="tab-content" id="dataTabsContent">
@@ -217,6 +223,55 @@
                                             <th>Vehicle ID</th>
                                             <th>Vehicle Model</th>
                                             <th>Department</th>
+                                            <th>Work Orders</th>
+                                            <th>Labor Cost</th>
+                                            <th>Material Cost</th>
+                                            <th>Total Cost</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Time Series Tab -->
+            <div class="tab-pane fade" id="time-series" role="tabpanel" aria-labelledby="time-series-tab">
+                <div class="card border-top-0 rounded-top-0">
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="timeInterval" class="form-label">Time Interval</label>
+                                <select class="form-select" id="timeInterval">
+                                    <option value="day">Daily</option>
+                                    <option value="week">Weekly</option>
+                                    <option value="month" selected>Monthly</option>
+                                    <option value="quarter">Quarterly</option>
+                                    <option value="year">Yearly</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8 d-flex justify-content-end align-items-end">
+                                <button type="button" id="updateTimeSeries" class="btn btn-primary">
+                                    <i class="fas fa-sync"></i> Update Chart
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="timeSeriesChartContainer" class="loading">
+                            <div class="chart-container" style="height: 400px;">
+                                <canvas id="timeSeriesChart"></canvas>
+                            </div>
+
+                            <h5 class="mt-4">Cost Trend Data</h5>
+                            <div class="table-responsive mt-3">
+                                <table id="timeSeriesTable" class="table table-striped table-bordered"
+                                    style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Time Period</th>
                                             <th>Work Orders</th>
                                             <th>Labor Cost</th>
                                             <th>Material Cost</th>
