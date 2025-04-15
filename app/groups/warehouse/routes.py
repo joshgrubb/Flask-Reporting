@@ -38,6 +38,13 @@ def index():
                 "url": "/groups/warehouse/fifo_stock/",
                 "icon": "fas fa-boxes",
             },
+            {
+                "id": "audit_transactions",
+                "name": "Audit Transactions",
+                "description": "View inventory audit transactions showing cost and quantity changes",
+                "url": "/groups/warehouse/audit_transactions/",
+                "icon": "fas fa-file-invoice-dollar",
+            },
             # Add more reports as they are implemented
         ]
 

@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block cdn_resources %}
+{{ include_cdn(bundles=["datatables", "chartjs", "datepicker"]) }}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/warehouse/">Warehouse</a></li>
+                <li class="breadcrumb-item active">Audit Transactions</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-file-invoice-dollar"></i> {{ title }}</h1>
+        <p class="lead">View warehouse inventory audit transactions showing cost and quantity changes.</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="filters">
+            <form id="reportFilters">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" name="start_date"
+                            value="{{ default_start_date }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate" name="end_date"
+                            value="{{ default_end_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="accountNumber" class="form-label">GL Account Number</label>
+                        <input type="text" class="form-control" id="accountNumber" name="account_number"
+                            placeholder="Filter by account">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="materialId" class="form-label">Material ID</label>
+                        <input type="text" class="form-control" id="materialId" name="material_id"
+                            placeholder="Filter by material">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" id="applyFilters" class="btn btn-primary w-100">
+                            <i class="fas fa-filter"></i> Apply Filter
+                        </button>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-2">
+                        <button type="button" id="resetFilters" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
+                    <div class="col-md-2 ms-auto">
+                        <button type="button" id="exportData" class="btn btn-success w-100">
+                            <i class="fas fa-file-export"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-exchange-alt"></i> Total Transactions
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalTransactions">-</h2>
+                <p class="text-muted" id="dateRangeInfo">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-money-bill-wave"></i> Total Cost Change
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalCostChange">-</h2>
+                <p class="text-muted">Absolute value of all cost changes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-boxes"></i> Unique Materials
+                </h5>
+                <h2 class="mt-3 mb-0" id="uniqueMaterials">-</h2>
+                <p class="text-muted">Materials with audit transactions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Summary Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Account Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="accountChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Top Materials by Cost Change</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="materialChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables Section -->
+<div class="row">
+    <div class="col">
+        <ul class="nav nav-tabs mb-3" id="dataTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="transactions-tab" data-bs-toggle="tab"
+                    data-bs-target="#transactions" type="button" role="tab" aria-controls="transactions"
+                    aria-selected="true">
+                    <i class="fas fa-list"></i> Transactions
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="accounts-tab" data-bs-toggle="tab" data-bs-target="#accounts" type="button"
+                    role="tab" aria-controls="accounts" aria-selected="false">
+                    <i class="fas fa-file-invoice-dollar"></i> Account Summary
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials"
+                    type="button" role="tab" aria-controls="materials" aria-selected="false">
+                    <i class="fas fa-boxes"></i> Material Summary
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="dataTabsContent">
+            <!-- Transactions Tab -->
+            <div class="tab-pane fade show active" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <div id="transactionsTableContainer" class="loading">
+                            <table id="transactionsTable" class="table table-striped table-bordered" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <!-- <th>Transaction ID</th> -->
+                                        <th>Date/Time</th>
+                                        <th>Type</th>
+                                        <th>Personnel</th>
+                                        <th>Material ID</th>
+                                        <th>Description</th>
+                                        <th>Old Qty</th>
+                                        <th>New Qty</th>
+                                        <th>Old Cost</th>
+                                        <th>New Cost</th>
+                                        <th>GL Account</th>
+                                        <th>Cost Diff</th>
+                                        <th>Work Order</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Summary Tab -->
+            <div class="tab-pane fade" id="accounts" role="tabpanel" aria-labelledby="accounts-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <div id="accountsTableContainer" class="loading">
+                            <table id="accountsTable" class="table table-striped table-bordered" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>GL Account</th>
+                                        <th>Transaction Count</th>
+                                        <th>Material Count</th>
+                                        <th>Total Cost Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Materials Tab -->
+            <div class="tab-pane fade" id="materials" role="tabpanel" aria-labelledby="materials-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <div id="materialsTableContainer" class="loading">
+                            <table id="materialsTable" class="table table-striped table-bordered" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Material ID</th>
+                                        <th>Description</th>
+                                        <th>Transaction Count</th>
+                                        <th>Total Cost Change</th>
+                                        <th>Min Old Cost</th>
+                                        <th>Max New Cost</th>
+                                        <th>Avg New Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About Section -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">About This Report</h5>
+            </div>
+            <div class="card-body">
+                <p>This report shows inventory audit transactions from the CityWorks system, displaying:</p>
+                <ul>
+                    <li>Material cost changes in the warehouse inventory system</li>
+                    <li>Quantity adjustments for inventory items</li>
+                    <li>Transaction history with associated work orders</li>
+                    <li>GL account attribution for cost changes</li>
+                </ul>
+                <p>Use the filters at the top to narrow down transactions by date range, GL account, or specific
+                    material ID.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Custom JS for this report -->
+<script src="{{ url_for('static', filename='js/warehouse/audit_transactions.js') }}"></script>
+{% endblock %}
