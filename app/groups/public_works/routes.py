@@ -40,7 +40,7 @@ def index():
             },
             {
                 "id": "fleet_costs",
-                "name": "Motor Fleet Costs",
+                "name": "Vehicle Fleet Costs",
                 "description": "Vehicle Fleet costs by department and vehicle",
                 "url": "/groups/public_works/fleet_costs/",
                 "icon": "fa-solid fa-dollar-sign",

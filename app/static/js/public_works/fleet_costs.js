@@ -1178,16 +1178,57 @@ function getIntervalName(interval) {
     }
 }
 /**
- * Update work order count and date range info
+ * Update work order count and date range info with timezone-safe date handling
  * @param {number} count - The number of work orders
  */
 function updateWorkOrderCount(count) {
     $('#totalWorkOrders').text(count);
 
-    // Update date range info
-    const startDate = $('#startDate').val();
-    const endDate = $('#endDate').val();
-    $('#dateRangeInfo').text(`From ${formatDate(startDate)} to ${formatDate(endDate)}`);
+    // Update date range info with timezone-safe date formatting
+    const startDateStr = $('#startDate').val();
+    const endDateStr = $('#endDate').val();
+
+    // Format dates safely without timezone shifting
+    const formattedStartDate = formatDateSafe(startDateStr);
+    const formattedEndDate = formatDateSafe(endDateStr);
+
+    $('#dateRangeInfo').text(`From ${formattedStartDate} to ${formattedEndDate}`);
+}
+
+/**
+ * Format a date string safely without timezone shifting
+ * @param {string} dateString - The date string to format
+ * @returns {string} - Formatted date string
+ */
+function formatDateSafe(dateString) {
+    if (!dateString) return '';
+
+    try {
+        // Extract date components directly from YYYY-MM-DD format
+        const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+            const day = parseInt(match[3], 10);
+
+            // Create date without timezone shifting
+            const date = new Date(year, month, day);
+
+            // Verify date is valid
+            if (isNaN(date.getTime())) {
+                return dateString; // Return original if parsing failed
+            }
+
+            // Format using locale-specific date format
+            return date.toLocaleDateString();
+        }
+
+        // Fallback to original format function if not in expected format
+        return formatDate(dateString);
+    } catch (error) {
+        console.error('Error safely formatting date:', error);
+        return dateString;
+    }
 }
 
 /**
