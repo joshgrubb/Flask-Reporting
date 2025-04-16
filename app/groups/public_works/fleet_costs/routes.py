@@ -7,7 +7,7 @@ This module defines the routes for the Fleet Costs report blueprint.
 
 import logging
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from flask import render_template, request, jsonify, Response
 
@@ -75,15 +75,19 @@ def get_report_data():
 
         # Parse dates if provided
         if start_date_str and end_date_str:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").replace(
+                tzinfo=timezone.utc
+            )
             start_date = start_date.replace(hour=0, minute=0, second=0)
 
             end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
-            end_date = end_date.replace(hour=23, minute=59, second=59)
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, tzinfo=timezone.utc
+            )
         else:
             # Use default dates (last 90 days)
             end_date = datetime.now().replace(hour=23, minute=59, second=59)
-            start_date = (end_date - timedelta(days=90)).replace(
+            start_date = (start_date - timedelta(days=90)).replace(
                 hour=0, minute=0, second=0
             )
 
@@ -354,7 +358,16 @@ def get_time_series_data():
             start_date = start_date.replace(hour=0, minute=0, second=0)
 
             end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+            # Fix: Make sure end date is the end of the day to include all data
             end_date = end_date.replace(hour=23, minute=59, second=59)
+
+            # Debug logging
+            logger.info(
+                "Time series request with interval %s from %s to %s",
+                interval,
+                start_date.strftime("%Y-%m-%d %H:%M:%S"),
+                end_date.strftime("%Y-%m-%d %H:%M:%S"),
+            )
         else:
             # Use default dates (last 90 days)
             end_date = datetime.now().replace(hour=23, minute=59, second=59)
@@ -370,12 +383,25 @@ def get_time_series_data():
         # Execute query
         results = execute_query(query, params, db_key=db_key)
 
+        # Add debug logging for the data
+        logger.debug("Time series query results count: %d", len(results))
+        if interval == "year":
+            years = [
+                (
+                    result["TimePeriod"].year
+                    if hasattr(result["TimePeriod"], "year")
+                    else "unknown"
+                )
+                for result in results
+            ]
+            logger.debug("Years in results: %s", years)
+
         # Process date fields for JSON serialization
         for row in results:
             if row.get("TimePeriod"):
                 row["TimePeriod"] = (
-                    row["TimePeriod"].isoformat()
-                    if hasattr(row["TimePeriod"], "isoformat")
+                    row["TimePeriod"].strftime("%Y-%m-%d")
+                    if hasattr(row["TimePeriod"], "strftime")
                     else row["TimePeriod"]
                 )
 

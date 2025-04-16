@@ -265,44 +265,25 @@ def get_costs_over_time(
     if start_date is None or end_date is None:
         start_date, end_date = get_default_date_range()
 
-    # For time-based analysis, expand the date range slightly to ensure complete intervals
-    if interval == "month":
-        # Extend to beginning of start month and end of end month
-        start_date = start_date.replace(day=1)
-        if end_date.month == 12:
-            end_date = end_date.replace(
-                year=end_date.year + 1, month=1, day=1
-            ) - timedelta(days=1)
-        else:
-            end_date = end_date.replace(month=end_date.month + 1, day=1) - timedelta(
-                days=1
-            )
+    # For time-based analysis, make sure to include the entire period
+    if interval == "year":
+        # Fix: Make sure we include the entire date range, including the current year
+        start_date = start_date.replace(month=1, day=1, hour=0, minute=0, second=0)
+        # Ensure we keep the day intact to include the current (partial) year
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+    elif interval == "month":
+        # Extend to beginning of start month
+        start_date = start_date.replace(day=1, hour=0, minute=0, second=0)
+        # Keep the original end date but set to end of day
+        end_date = end_date.replace(hour=23, minute=59, second=59)
     elif interval == "quarter":
-        # Extend to beginning of start quarter and end of end quarter
+        # Extend to beginning of start quarter
         start_quarter_month = ((start_date.month - 1) // 3) * 3 + 1
-        start_date = start_date.replace(month=start_quarter_month, day=1)
-
-        end_quarter_month = ((end_date.month - 1) // 3) * 3 + 1
-        end_quarter_last_month = end_quarter_month + 2
-        if end_quarter_last_month > 12:
-            end_date = end_date.replace(
-                year=end_date.year + 1, month=(end_quarter_last_month - 12), day=1
-            ) - timedelta(days=1)
-        else:
-            if end_quarter_last_month == 12:
-                end_date = end_date.replace(
-                    year=end_date.year + 1, month=1, day=1
-                ) - timedelta(days=1)
-            else:
-                end_date = end_date.replace(
-                    month=end_quarter_last_month + 1, day=1
-                ) - timedelta(days=1)
-    elif interval == "year":
-        # Extend to beginning and end of years
-        start_date = start_date.replace(month=1, day=1)
-        end_date = end_date.replace(year=end_date.year + 1, month=1, day=1) - timedelta(
-            days=1
+        start_date = start_date.replace(
+            month=start_quarter_month, day=1, hour=0, minute=0, second=0
         )
+        # Keep the original end date but set to end of day
+        end_date = end_date.replace(hour=23, minute=59, second=59)
 
     # Convert dates to strings for SQL
     start_date_str = format_date_for_query(start_date)
