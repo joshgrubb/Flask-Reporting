@@ -352,27 +352,35 @@ def get_time_series_data():
         if interval not in valid_intervals:
             interval = "month"  # Default to month if invalid
 
-        # Parse dates if provided
-        if start_date_str and end_date_str:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-            start_date = start_date.replace(hour=0, minute=0, second=0)
+        # Parse dates if provided with better error handling
+        try:
+            if start_date_str and end_date_str:
+                # Parse the input dates, handling potential format issues
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+                start_date = start_date.replace(hour=0, minute=0, second=0)
 
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
-            # Fix: Make sure end date is the end of the day to include all data
-            end_date = end_date.replace(hour=23, minute=59, second=59)
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+                # Make sure end date is the end of the day to include all data
+                end_date = end_date.replace(hour=23, minute=59, second=59)
 
-            # Debug logging
-            logger.info(
-                "Time series request with interval %s from %s to %s",
-                interval,
-                start_date.strftime("%Y-%m-%d %H:%M:%S"),
-                end_date.strftime("%Y-%m-%d %H:%M:%S"),
-            )
-        else:
-            # Use default dates (last 90 days)
-            end_date = datetime.now().replace(hour=23, minute=59, second=59)
-            start_date = (end_date - timedelta(days=90)).replace(
-                hour=0, minute=0, second=0
+                # Debug logging
+                logger.info(
+                    "Time series request with interval %s from %s to %s",
+                    interval,
+                    start_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    end_date.strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            else:
+                # Use default dates (last 90 days)
+                end_date = datetime.now().replace(hour=23, minute=59, second=59)
+                start_date = (end_date - timedelta(days=90)).replace(
+                    hour=0, minute=0, second=0
+                )
+        except ValueError as e:
+            logger.error("Date parsing error: %s", str(e))
+            return (
+                jsonify({"success": False, "error": f"Invalid date format: {str(e)}"}),
+                400,
             )
 
         # Get query and parameters
@@ -385,25 +393,54 @@ def get_time_series_data():
 
         # Add debug logging for the data
         logger.debug("Time series query results count: %d", len(results))
-        if interval == "year":
-            years = [
-                (
-                    result["TimePeriod"].year
-                    if hasattr(result["TimePeriod"], "year")
-                    else "unknown"
-                )
-                for result in results
-            ]
-            logger.debug("Years in results: %s", years)
 
-        # Process date fields for JSON serialization
+        # Log details about specific periods for debugging
+        if interval == "month":
+            current_month = datetime.now().month
+            current_year = datetime.now().year
+
+            # Check if we have data for the current month
+            current_month_data = [
+                r
+                for r in results
+                if hasattr(r["TimePeriod"], "month")
+                and r["TimePeriod"].month == current_month
+                and r["TimePeriod"].year == current_year
+            ]
+            logger.debug(
+                "Data for current month (%d/%d): %s",
+                current_month,
+                current_year,
+                "Found" if current_month_data else "Not found",
+            )
+
+            # Check full range of months in the data
+            if results:
+                months = [
+                    (
+                        (r["TimePeriod"].year, r["TimePeriod"].month)
+                        if hasattr(r["TimePeriod"], "year")
+                        and hasattr(r["TimePeriod"], "month")
+                        else ("unknown", "unknown")
+                    )
+                    for r in results
+                ]
+                logger.debug("Months in results (year, month): %s", months)
+
+        # Process date fields for JSON serialization with enhanced handling
         for row in results:
             if row.get("TimePeriod"):
-                row["TimePeriod"] = (
-                    row["TimePeriod"].strftime("%Y-%m-%d")
-                    if hasattr(row["TimePeriod"], "strftime")
-                    else row["TimePeriod"]
-                )
+                try:
+                    # Ensure consistent date format for output
+                    if hasattr(row["TimePeriod"], "strftime"):
+                        # Use ISO format for most consistent parsing on client side
+                        row["TimePeriod"] = row["TimePeriod"].isoformat()
+                    else:
+                        # If it's not a datetime object somehow, convert to string
+                        row["TimePeriod"] = str(row["TimePeriod"])
+                except Exception as e:
+                    logger.error("Error formatting date: %s", str(e))
+                    row["TimePeriod"] = str(row["TimePeriod"])
 
         # Return data as JSON
         return jsonify(

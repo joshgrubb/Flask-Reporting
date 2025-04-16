@@ -267,23 +267,20 @@ def get_costs_over_time(
 
     # For time-based analysis, make sure to include the entire period
     if interval == "year":
-        # Fix: Make sure we include the entire date range, including the current year
+        # Always start from beginning of the year for yearly data
         start_date = start_date.replace(month=1, day=1, hour=0, minute=0, second=0)
-        # Ensure we keep the day intact to include the current (partial) year
-        end_date = end_date.replace(hour=23, minute=59, second=59)
     elif interval == "month":
-        # Extend to beginning of start month
+        # Start from beginning of month for monthly data
         start_date = start_date.replace(day=1, hour=0, minute=0, second=0)
-        # Keep the original end date but set to end of day
-        end_date = end_date.replace(hour=23, minute=59, second=59)
     elif interval == "quarter":
-        # Extend to beginning of start quarter
+        # Start from beginning of quarter for quarterly data
         start_quarter_month = ((start_date.month - 1) // 3) * 3 + 1
         start_date = start_date.replace(
             month=start_quarter_month, day=1, hour=0, minute=0, second=0
         )
-        # Keep the original end date but set to end of day
-        end_date = end_date.replace(hour=23, minute=59, second=59)
+
+    # Always ensure we include up to 23:59:59 on the end date for complete coverage
+    end_date = end_date.replace(hour=23, minute=59, second=59)
 
     # Convert dates to strings for SQL
     start_date_str = format_date_for_query(start_date)
@@ -295,14 +292,19 @@ def get_costs_over_time(
     # Determine date grouping based on interval
     date_group_expr = ""
     if interval == "day":
-        date_group_expr = "CONVERT(DATE, WO.[ACTUALFINISHDATE])"
+        # Group by day - simpler expression to avoid timezone issues
+        date_group_expr = "CAST(WO.[ACTUALFINISHDATE] AS DATE)"
     elif interval == "week":
-        date_group_expr = "DATEADD(DAY, -DATEPART(WEEKDAY, WO.[ACTUALFINISHDATE]) + 1, CONVERT(DATE, WO.[ACTUALFINISHDATE]))"
+        # Improved week grouping - get start of the week (Monday)
+        date_group_expr = "DATEADD(DAY, -(DATEPART(WEEKDAY, WO.[ACTUALFINISHDATE]) - 1), CAST(WO.[ACTUALFINISHDATE] AS DATE))"
     elif interval == "month":
+        # Group by month - simplified to avoid inconsistencies
         date_group_expr = "DATEFROMPARTS(YEAR(WO.[ACTUALFINISHDATE]), MONTH(WO.[ACTUALFINISHDATE]), 1)"
     elif interval == "quarter":
+        # Group by quarter - calculate first day of the quarter
         date_group_expr = "DATEFROMPARTS(YEAR(WO.[ACTUALFINISHDATE]), ((DATEPART(QUARTER, WO.[ACTUALFINISHDATE]) - 1) * 3) + 1, 1)"
     elif interval == "year":
+        # Group by year - first day of the year
         date_group_expr = "DATEFROMPARTS(YEAR(WO.[ACTUALFINISHDATE]), 1, 1)"
     else:
         # Default to monthly if invalid interval provided

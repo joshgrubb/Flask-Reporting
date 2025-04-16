@@ -598,7 +598,7 @@ function initTopVehiclesChart(data) {
     }
 }
 /**
- * Load time series data with improved debugging
+ * Load time series data with improved handling
  */
 function loadTimeSeriesData() {
     // Get filter values
@@ -626,37 +626,18 @@ function loadTimeSeriesData() {
             if (response.success) {
                 console.log('Time series data received, count:', response.data.length);
 
-                // Debug: Check if we have data for specific periods
-                if (interval === 'month') {
-                    const apr2025 = response.data.find(item => {
-                        try {
-                            const date = new Date(item.TimePeriod);
-                            return date.getFullYear() === 2025 && date.getMonth() === 3; // April is month 3 (0-indexed)
-                        } catch (e) {
-                            return false;
-                        }
-                    });
-                    console.log('April 2025 data found:', apr2025 ? 'Yes' : 'No');
-                    if (apr2025) {
-                        console.log('April 2025 data:', apr2025);
-                    }
-                } else if (interval === 'year') {
-                    const year2025 = response.data.find(item => {
-                        try {
-                            const date = new Date(item.TimePeriod);
-                            return date.getFullYear() === 2025;
-                        } catch (e) {
-                            return false;
-                        }
-                    });
-                    console.log('Year 2025 data found:', year2025 ? 'Yes' : 'No');
-                    if (year2025) {
-                        console.log('Year 2025 data:', year2025);
-                    }
+                if (response.data.length === 0) {
+                    // Handle empty data case
+                    showError('No data available for the selected time period');
+                    $('#timeSeriesChartContainer').removeClass('loading');
+                    return;
                 }
 
+                // Enhanced debugging
+                logTimeSeriesData(response.data, interval);
+
                 initTimeSeriesChart(response.data, interval);
-                initTimeSeriesTable(response.data);
+                initTimeSeriesTable(response.data, interval);
             } else {
                 showError('Error loading time series data: ' + response.error);
             }
@@ -672,7 +653,130 @@ function loadTimeSeriesData() {
 }
 
 /**
- * Initialize the time series chart with improved data handling
+ * Helper function to log and debug time series data with fixed date parsing
+ * @param {Array} data - The time series data
+ * @param {string} interval - The time interval
+ */
+function logTimeSeriesData(data, interval) {
+    // Check for specific months or years
+    const currentYear = new Date().getFullYear();
+
+    if (interval === 'month') {
+        // Map to track which months we've found
+        const foundMonths = {};
+
+        // Process each data item
+        data.forEach(item => {
+            let periodDate = null;
+
+            // Handle various date formats
+            if (typeof item.TimePeriod === 'string') {
+                // Try parsing date - handle both ISO format and SQL Server format
+                const isoMatch = item.TimePeriod.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (isoMatch) {
+                    const year = parseInt(isoMatch[1], 10);
+                    const month = parseInt(isoMatch[2], 10) - 1; // JS months are 0-indexed
+
+                    // Create a month key for tracking
+                    const monthKey = `${year}-${month + 1}`;
+
+                    // Check if we haven't logged this month yet
+                    if (!foundMonths[monthKey]) {
+                        foundMonths[monthKey] = true;
+                        const monthDate = new Date(year, month, 1);
+                        console.log(`Found data for ${monthDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}`);
+                    }
+                }
+            }
+        });
+
+        // Check for current month specifically
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentMonthKey = `${currentYear}-${currentMonth + 1}`;
+        if (foundMonths[currentMonthKey]) {
+            console.log(`Current month (${now.toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}) data found!`);
+        }
+    } else if (interval === 'year') {
+        // Handle year interval similarly
+        const foundYears = {};
+
+        data.forEach(item => {
+            if (typeof item.TimePeriod === 'string') {
+                const yearMatch = item.TimePeriod.match(/^(\d{4})/);
+                if (yearMatch) {
+                    const year = parseInt(yearMatch[1], 10);
+
+                    if (!foundYears[year]) {
+                        foundYears[year] = true;
+                        console.log(`Found data for year ${year}`);
+                    }
+                }
+            }
+        });
+    }
+
+    // Log the raw received data for detailed debugging
+    console.log('Raw time series data:', JSON.stringify(data.map(item => ({
+        period: item.TimePeriod,
+        workOrders: item.WorkOrderCount,
+        laborCost: item.TotalLaborCost,
+        materialCost: item.TotalMaterialCost,
+        totalCost: item.TotalCost
+    }))));
+}
+
+/**
+ * Parse a date string with timezone-aware handling
+ * @param {string|Date} dateValue - The date to parse
+ * @returns {Date|null} - Parsed Date object or null if invalid
+ */
+function parseTimePeriod(dateValue) {
+    if (!dateValue) {
+        return null;
+    }
+
+    // If already a Date object
+    if (dateValue instanceof Date) {
+        return isNaN(dateValue.getTime()) ? null : dateValue;
+    }
+
+    // For string values
+    if (typeof dateValue === 'string') {
+        try {
+            // Handle YYYY-MM-DD format (most common from SQL Server)
+            const isoMatch = dateValue.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (isoMatch) {
+                const year = parseInt(isoMatch[1], 10);
+                const month = parseInt(isoMatch[2], 10) - 1; // JS months are 0-indexed
+                const day = parseInt(isoMatch[3], 10);
+
+                // Create date in local timezone (not UTC) to avoid timezone shifts
+                // This is critical - prevents the browser from interpreting dates in UTC
+                // which can cause them to shift to the previous day/month
+                return new Date(year, month, day);
+            }
+
+            // Try direct Date constructor as fallback
+            // NOTE: This can be problematic with timezone shifting
+            const directDate = new Date(dateValue);
+            if (!isNaN(directDate.getTime())) {
+                // Ensure we're using the date as specified (not shifted by timezone)
+                const year = directDate.getFullYear();
+                const month = directDate.getMonth();
+                const day = directDate.getDate();
+                return new Date(year, month, day);
+            }
+        } catch (error) {
+            console.error("Date parsing error:", error);
+        }
+    }
+
+    // If all parsing attempts fail
+    return null;
+}
+/**
+ * Initialize the time series chart with timezone-aware date handling
  * @param {Array} data - The time series data
  * @param {string} interval - The time interval (day, week, month, quarter, year)
  */
@@ -701,85 +805,107 @@ function initTimeSeriesChart(data, interval) {
         console.warn('Error checking for existing chart:', e);
     }
 
-    // Format data for chart with improved date parsing
-    const formattedData = data.map(item => {
-        let period;
+    // Parse and format data with improved timezone-aware date handling
+    const parsedData = [];
+
+    // Debugging raw date formats
+    console.log("Raw date formats sample:", data.slice(0, 2).map(item => item.TimePeriod));
+
+    for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+
         try {
-            // Ensure proper date parsing - use date constructor directly
-            period = new Date(item.TimePeriod);
+            // Log the raw period data for inspection
+            if (i < 5) {
+                console.log(`Raw time period [${i}]:`, item.TimePeriod);
+            }
 
-            // If invalid, try alternative parsing
-            if (isNaN(period.getTime())) {
-                console.warn(`Invalid date detected: ${item.TimePeriod}`);
+            // Extract date components directly to avoid timezone issues
+            // YYYY-MM-DD format parsing
+            let periodDate = null;
+            if (typeof item.TimePeriod === 'string') {
+                const match = item.TimePeriod.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (match) {
+                    const year = parseInt(match[1], 10);
+                    const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+                    const day = parseInt(match[3], 10);
+                    periodDate = new Date(year, month, day);
 
-                // Try different parsing methods
-                if (typeof item.TimePeriod === 'string') {
-                    if (item.TimePeriod.includes('T')) {
-                        // ISO format likely
-                        period = new Date(item.TimePeriod.split('T')[0]);
-                    } else if (item.TimePeriod.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        // YYYY-MM-DD format
-                        const parts = item.TimePeriod.split('-');
-                        period = new Date(parts[0], parts[1] - 1, parts[2]);
+                    // Log constructed date to check for timezone shifting
+                    if (i < 5) {
+                        console.log(`Constructed date [${i}]:`,
+                            periodDate.toLocaleDateString(),
+                            `(${year}-${month + 1}-${day})`);
                     }
                 }
+            } else if (item.TimePeriod instanceof Date) {
+                // Direct date object - use year, month, day to rebuild and avoid timezone issues
+                const year = item.TimePeriod.getFullYear();
+                const month = item.TimePeriod.getMonth();
+                const day = item.TimePeriod.getDate();
+                periodDate = new Date(year, month, day);
             }
-        } catch (e) {
-            console.error('Date parsing error:', e);
-            // Use placeholder date as fallback (shouldn't happen)
-            period = new Date();
+
+            // Only add valid dates to the dataset
+            if (periodDate && !isNaN(periodDate.getTime())) {
+                parsedData.push({
+                    periodDate: periodDate,
+                    periodText: formatTimePeriod(periodDate, interval),
+                    rawPeriod: item.TimePeriod,
+                    laborCost: Number(item.TotalLaborCost || 0),
+                    materialCost: Number(item.TotalMaterialCost || 0),
+                    totalCost: Number(item.TotalCost || 0),
+                    workOrders: Number(item.WorkOrderCount || 0)
+                });
+            } else {
+                console.warn(`Skipping item with invalid date: ${item.TimePeriod}`);
+            }
+        } catch (error) {
+            console.error('Error parsing time period:', error, item);
         }
-
-        return {
-            period: period,
-            originalPeriod: item.TimePeriod, // Keep original for debugging
-            laborCost: parseFloat(item.TotalLaborCost || 0),
-            materialCost: parseFloat(item.TotalMaterialCost || 0),
-            totalCost: parseFloat(item.TotalCost || 0),
-            workOrders: parseInt(item.WorkOrderCount || 0, 10)
-        };
-    });
-
-    // Filter out invalid dates
-    const validData = formattedData.filter(item => !isNaN(item.period.getTime()));
+    }
 
     // Sort data chronologically
-    validData.sort((a, b) => a.period.getTime() - b.period.getTime());
+    parsedData.sort((a, b) => a.periodDate.getTime() - b.periodDate.getTime());
 
-    // Format time period labels based on interval
-    const labels = validData.map(item => {
-        const date = item.period;
+    // Log parsed data details
+    const months = parsedData.map(item =>
+        item.periodDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+    );
+    console.log(`Parsed ${parsedData.length} valid data points out of ${data.length} total`);
+    console.log('Parsed time periods:', months);
 
-        switch (interval) {
-            case 'day':
-                return date.toLocaleDateString();
-            case 'week':
-                return `Week of ${date.toLocaleDateString()}`;
-            case 'month':
-                return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
-            case 'quarter':
-                const quarter = Math.floor((date.getMonth() / 3) + 1);
-                return `Q${quarter} ${date.getFullYear()}`;
-            case 'year':
-                return date.getFullYear().toString();
-            default:
-                return date.toLocaleDateString();
-        }
-    });
+    // If no valid data, show message and exit
+    if (parsedData.length === 0) {
+        showError('No valid time series data available for the selected period');
+        return;
+    }
 
-    // Create datasets
-    const laborCosts = validData.map(item => item.laborCost);
-    const materialCosts = validData.map(item => item.materialCost);
-    const totalCosts = validData.map(item => item.totalCost);
-    const workOrders = validData.map(item => item.workOrders);
+    // Extract data series
+    const labels = parsedData.map(item => item.periodText);
+    const laborCosts = parsedData.map(item => item.laborCost);
+    const materialCosts = parsedData.map(item => item.materialCost);
+    const totalCosts = parsedData.map(item => item.totalCost);
+    const workOrders = parsedData.map(item => item.workOrders);
 
-    // Create chart with two y-axes using the validated data
+    // Create chart
     try {
         new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
+                    {
+                        label: 'Total Cost',
+                        data: totalCosts,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 3,
+                        yAxisID: 'y-cost',
+                        order: 1,
+                        type: 'line',
+                        tension: 0.1
+                    },
                     {
                         label: 'Labor Cost',
                         data: laborCosts,
@@ -799,17 +925,6 @@ function initTimeSeriesChart(data, interval) {
                         borderWidth: 2,
                         yAxisID: 'y-cost',
                         order: 3,
-                        type: 'line',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Total Cost',
-                        data: totalCosts,
-                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 3,
-                        yAxisID: 'y-cost',
-                        order: 1,
                         type: 'line',
                         tension: 0.1
                     },
@@ -903,10 +1018,11 @@ function initTimeSeriesChart(data, interval) {
     }
 }
 /**
- * Initialize the time series table with improved debugging
+ * Initialize the time series table with timezone-aware date handling
  * @param {Array} data - The time series data
+ * @param {string} interval - The time interval
  */
-function initTimeSeriesTable(data) {
+function initTimeSeriesTable(data, interval) {
     // Check if DataTables is available
     if (typeof $.fn.DataTable !== 'function') {
         console.error('DataTables is not loaded properly');
@@ -919,68 +1035,66 @@ function initTimeSeriesTable(data) {
         $('#timeSeriesTable').DataTable().destroy();
     }
 
-    // Format the time periods based on interval
-    const interval = $('#timeInterval').val();
-    const formattedData = data.map(item => {
-        try {
-            const date = new Date(item.TimePeriod);
-            let formattedPeriod;
+    // Parse and format data with robust date handling
+    const tableData = [];
 
-            if (!isNaN(date.getTime())) {
-                switch (interval) {
-                    case 'day':
-                        formattedPeriod = date.toLocaleDateString();
-                        break;
-                    case 'week':
-                        formattedPeriod = `Week of ${date.toLocaleDateString()}`;
-                        break;
-                    case 'month':
-                        formattedPeriod = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
-                        break;
-                    case 'quarter':
-                        const quarter = Math.floor((date.getMonth() / 3) + 1);
-                        formattedPeriod = `Q${quarter} ${date.getFullYear()}`;
-                        break;
-                    case 'year':
-                        formattedPeriod = date.getFullYear().toString();
-                        break;
-                    default:
-                        formattedPeriod = date.toLocaleDateString();
+    for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+
+        try {
+            // Extract date components directly to avoid timezone issues
+            let periodDate = null;
+            if (typeof item.TimePeriod === 'string') {
+                const match = item.TimePeriod.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (match) {
+                    const year = parseInt(match[1], 10);
+                    const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+                    const day = parseInt(match[3], 10);
+                    periodDate = new Date(year, month, day);
                 }
-            } else {
-                // Fallback for invalid dates
-                formattedPeriod = String(item.TimePeriod);
-                console.warn(`Invalid date in time series table: ${item.TimePeriod}`);
+            } else if (item.TimePeriod instanceof Date) {
+                // Direct date object - use year, month, day to rebuild
+                const year = item.TimePeriod.getFullYear();
+                const month = item.TimePeriod.getMonth();
+                const day = item.TimePeriod.getDate();
+                periodDate = new Date(year, month, day);
             }
 
-            return {
-                TimePeriod: formattedPeriod,
-                WorkOrderCount: item.WorkOrderCount || 0,
-                LaborCost: formatCurrency(item.TotalLaborCost || 0),
-                MaterialCost: formatCurrency(item.TotalMaterialCost || 0),
-                TotalCost: formatCurrency(item.TotalCost || 0),
-                RawDate: item.TimePeriod // Keep original for sorting
-            };
+            // Add to table data
+            if (periodDate && !isNaN(periodDate.getTime())) {
+                tableData.push({
+                    TimePeriod: formatTimePeriod(periodDate, interval),
+                    WorkOrderCount: item.WorkOrderCount || 0,
+                    LaborCost: formatCurrency(item.TotalLaborCost || 0),
+                    MaterialCost: formatCurrency(item.TotalMaterialCost || 0),
+                    TotalCost: formatCurrency(item.TotalCost || 0),
+                    RawDate: periodDate.getTime() // For sorting
+                });
+            } else {
+                // Add item with raw text as fallback
+                tableData.push({
+                    TimePeriod: String(item.TimePeriod || 'Unknown'),
+                    WorkOrderCount: item.WorkOrderCount || 0,
+                    LaborCost: formatCurrency(item.TotalLaborCost || 0),
+                    MaterialCost: formatCurrency(item.TotalMaterialCost || 0),
+                    TotalCost: formatCurrency(item.TotalCost || 0),
+                    RawDate: 0 // For sorting, put unknown dates first
+                });
+            }
         } catch (error) {
-            console.error('Error formatting time series table row:', error);
-            // Return fallback data
-            return {
-                TimePeriod: String(item.TimePeriod || 'Unknown'),
-                WorkOrderCount: item.WorkOrderCount || 0,
-                LaborCost: formatCurrency(item.TotalLaborCost || 0),
-                MaterialCost: formatCurrency(item.TotalMaterialCost || 0),
-                TotalCost: formatCurrency(item.TotalCost || 0),
-                RawDate: item.TimePeriod
-            };
+            console.error('Error parsing time period for table:', error, item);
         }
-    });
+    }
+
+    // Sort by date
+    tableData.sort((a, b) => a.RawDate - b.RawDate);
 
     // Debug: Log table data
-    console.log('Time series table data:', formattedData);
+    console.log('Formatted time series table data:', tableData);
 
     // Initialize DataTable
     const table = $('#timeSeriesTable').DataTable({
-        data: formattedData,
+        data: tableData,
         columns: [
             { data: 'TimePeriod' },
             { data: 'WorkOrderCount' },
@@ -1001,6 +1115,51 @@ function initTimeSeriesTable(data) {
             table.columns.adjust();
         }
     });
+}
+
+/**
+ * Format a time period based on interval
+ * @param {Date} date - The date to format
+ * @param {string} interval - The time interval
+ * @returns {string} - Formatted time period string
+ */
+function formatTimePeriod(date, interval) {
+    if (!date || isNaN(date.getTime())) {
+        return 'Unknown';
+    }
+
+    try {
+        switch (interval) {
+            case 'day':
+                return date.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            case 'week':
+                return `Week of ${date.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                })}`;
+            case 'month':
+                return date.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long'
+                });
+            case 'quarter': {
+                const quarter = Math.floor((date.getMonth() / 3) + 1);
+                return `Q${quarter} ${date.getFullYear()}`;
+            }
+            case 'year':
+                return date.getFullYear().toString();
+            default:
+                return date.toLocaleDateString();
+        }
+    } catch (error) {
+        console.error('Error formatting time period:', error);
+        return String(date);
+    }
 }
 
 /**
