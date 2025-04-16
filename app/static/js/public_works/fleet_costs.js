@@ -701,21 +701,12 @@ function initTimeSeriesChart(data, interval) {
         console.warn('Error checking for existing chart:', e);
     }
 
-    // Debug: Log raw data
-    console.log('Raw time series data:', JSON.stringify(data));
-
     // Format data for chart with improved date parsing
     const formattedData = data.map(item => {
-        // Debug each item
-        console.log('Processing time period:', item.TimePeriod);
-
         let period;
         try {
             // Ensure proper date parsing - use date constructor directly
             period = new Date(item.TimePeriod);
-
-            // Log the parsed date
-            console.log(`Parsed date: ${period.toISOString()}, Valid: ${!isNaN(period.getTime())}`);
 
             // If invalid, try alternative parsing
             if (isNaN(period.getTime())) {
@@ -732,8 +723,6 @@ function initTimeSeriesChart(data, interval) {
                         period = new Date(parts[0], parts[1] - 1, parts[2]);
                     }
                 }
-
-                console.log(`After fix attempt: ${period.toISOString()}, Valid: ${!isNaN(period.getTime())}`);
             }
         } catch (e) {
             console.error('Date parsing error:', e);
@@ -744,30 +733,18 @@ function initTimeSeriesChart(data, interval) {
         return {
             period: period,
             originalPeriod: item.TimePeriod, // Keep original for debugging
-            laborCost: item.TotalLaborCost || 0,
-            materialCost: item.TotalMaterialCost || 0,
-            totalCost: item.TotalCost || 0,
-            workOrders: item.WorkOrderCount || 0
+            laborCost: parseFloat(item.TotalLaborCost || 0),
+            materialCost: parseFloat(item.TotalMaterialCost || 0),
+            totalCost: parseFloat(item.TotalCost || 0),
+            workOrders: parseInt(item.WorkOrderCount || 0, 10)
         };
     });
 
     // Filter out invalid dates
     const validData = formattedData.filter(item => !isNaN(item.period.getTime()));
 
-    // Debug log of filtered data
-    console.log('Valid formatted data:', validData.map(d => ({
-        period: d.period.toISOString(),
-        totalCost: d.totalCost
-    })));
-
     // Sort data chronologically
     validData.sort((a, b) => a.period.getTime() - b.period.getTime());
-
-    // Log sorted data to verify order
-    console.log('Sorted data:', validData.map(d => ({
-        period: d.period.toISOString(),
-        totalCost: d.totalCost
-    })));
 
     // Format time period labels based on interval
     const labels = validData.map(item => {
@@ -796,61 +773,59 @@ function initTimeSeriesChart(data, interval) {
     const totalCosts = validData.map(item => item.totalCost);
     const workOrders = validData.map(item => item.workOrders);
 
-    // Debug: Log the final datasets
-    console.log('Chart labels:', labels);
-    console.log('Total costs dataset:', totalCosts);
-
-    // Determine y-axis scale
-    const maxCost = Math.max(...totalCosts);
-    const maxWorkOrders = Math.max(...workOrders);
-
     // Create chart with two y-axes using the validated data
     try {
         new Chart(canvas, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
                     {
                         label: 'Labor Cost',
                         data: laborCosts,
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
                         borderColor: 'rgba(54, 162, 235, 1)',
                         borderWidth: 2,
                         yAxisID: 'y-cost',
+                        order: 2,
+                        type: 'line',
                         tension: 0.1
                     },
                     {
                         label: 'Material Cost',
                         data: materialCosts,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
                         borderColor: 'rgba(255, 99, 132, 1)',
                         borderWidth: 2,
                         yAxisID: 'y-cost',
+                        order: 3,
+                        type: 'line',
                         tension: 0.1
                     },
                     {
                         label: 'Total Cost',
                         data: totalCosts,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
                         borderColor: 'rgba(75, 192, 192, 1)',
                         borderWidth: 3,
                         yAxisID: 'y-cost',
+                        order: 1,
+                        type: 'line',
                         tension: 0.1
                     },
                     {
                         label: 'Work Orders',
                         data: workOrders,
-                        type: 'bar',
                         backgroundColor: 'rgba(153, 102, 255, 0.5)',
                         borderColor: 'rgba(153, 102, 255, 1)',
                         borderWidth: 1,
-                        yAxisID: 'y-count'
+                        yAxisID: 'y-count',
+                        order: 4,
+                        type: 'bar'
                     }
                 ]
             },
             options: {
-                
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: {
@@ -882,79 +857,51 @@ function initTimeSeriesChart(data, interval) {
                 },
                 scales: {
                     x: {
-                        type: 'time',
-                        time: {
-                            parser: 'YYYY-MM-DD',
-                            unit: interval, // must match backend
-                            displayFormats: {
-                                day: 'MMM D',
-                                month: 'MMM YYYY',
-                                quarter: '[Q]Q - YYYY',
-                                year: 'YYYY'
-                            },
-                            title: {
-                                display: true,
-                                text: `Time (${getIntervalName(interval)})`
-                            },
-                            offset: true,        // Add offset to ensure bars aren't cut off
-                            ticks: {
-                                maxRotation: 45, // Rotate labels to save space
-                                minRotation: 0
-                            },
-                            grid: {
-                                offset: true     // Align grid with labels
-                            }
-                        },
-                        'y-cost': {
-                            type: 'linear',
+                        title: {
                             display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Cost ($)'
-                            },
-                            ticks: {
-                                callback: function (value) {
-                                    return formatCurrency(value, false);
-                                }
-                            },
-                            beginAtZero: true    // Start y-axis at zero
-                        },
-                        'y-count': {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Work Order Count'
-                            },
-                            ticks: {
-                                precision: 0
-                            },
-                            beginAtZero: true,   // Start y-axis at zero
-                            grid: {
-                                drawOnChartArea: false // only want the grid lines for one axis to show up
-                            }
+                            text: `Time (${getIntervalName(interval)})`
                         }
                     },
-                    layout: {
-                        padding: {
-                            left: 10,
-                            right: 10,
-                            top: 0,
-                            bottom: 10
+                    'y-cost': {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Cost ($)'
+                        },
+                        ticks: {
+                            callback: function (value) {
+                                return formatCurrency(value, false);
+                            }
+                        },
+                        beginAtZero: true
+                    },
+                    'y-count': {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Work Order Count'
+                        },
+                        ticks: {
+                            precision: 0
+                        },
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false
                         }
                     }
                 }
             }
-});
+        });
         console.log('Chart successfully created');
     } catch (error) {
         console.error('Error creating time series chart:', error);
         showError('Failed to create time series chart: ' + error.message);
     }
 }
-
 /**
  * Initialize the time series table with improved debugging
  * @param {Array} data - The time series data
