@@ -55,7 +55,7 @@ $(document).ready(function () {
     $('#exportSummary').click(function () {
         exportReportData('summary');
     });
-    
+
     $('#exportTemplate').click(function () {
         exportReportData('template');
     });
@@ -362,17 +362,30 @@ $(document).ready(function () {
         if (!dateString) return '';
 
         try {
-            const date = new Date(dateString);
+            // Extract date components directly from YYYY-MM-DD format
+            const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (match) {
+                const year = parseInt(match[1], 10);
+                const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+                const day = parseInt(match[3], 10);
 
-            // Check if the date is valid
-            if (isNaN(date.getTime())) {
-                return '';
+                // Create date without timezone shifting
+                const date = new Date(year, month, day);
+
+                // Verify date is valid
+                if (isNaN(date.getTime())) {
+                    return dateString; // Return original if parsing failed
+                }
+
+                // Format using locale-specific date format
+                return date.toLocaleDateString();
             }
 
-            return date.toLocaleDateString();
+            // Fallback to original format function if not in expected format
+            return formatDate(dateString);
         } catch (error) {
-            console.error('Error formatting date:', error);
-            return '';
+            console.error('Error safely formatting date:', error);
+            return dateString;
         }
     }
 

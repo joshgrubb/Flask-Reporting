@@ -140,7 +140,7 @@ function initInspectionsTable(data) {
             {
                 data: 'INSPDATE',
                 render: function (data) {
-                    return formatDate(data);
+                    return formatDateSafe(data);
                 }
             },
             { data: 'STATUS' }
@@ -235,7 +235,7 @@ function initWorkOrdersTable(data) {
             {
                 data: 'ACTUALFINISHDATE',
                 render: function (data) {
-                    return formatDate(data);
+                    return formatDateSafe(data);
                 }
             },
             { data: 'STATUS' }
@@ -272,7 +272,7 @@ function updateInspectionCount(count) {
     // Update date range info
     const startDate = $('#startDate').val();
     const endDate = $('#endDate').val();
-    $('#dateRangeInfo').text(`From ${formatDate(startDate)} to ${formatDate(endDate)}`);
+    $('#dateRangeInfo').text(`From ${formatDateSafe(startDate)} to ${formatDateSafe(endDate)}`);
 }
 
 /**
@@ -346,24 +346,37 @@ function exportWorkOrdersData() {
 }
 
 /**
- * Format a date string for display
+ * Format a date string safely without timezone shifting
  * @param {string} dateString - The date string to format
  * @returns {string} - Formatted date string
  */
-function formatDate(dateString) {
+function formatDateSafe(dateString) {
     if (!dateString) return '';
 
     try {
-        const date = new Date(dateString);
+        // Extract date components directly from YYYY-MM-DD format
+        const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+            const day = parseInt(match[3], 10);
 
-        // Check if date is valid
-        if (isNaN(date.getTime())) {
-            return dateString;
+            // Create date without timezone shifting
+            const date = new Date(year, month, day);
+
+            // Verify date is valid
+            if (isNaN(date.getTime())) {
+                return dateString; // Return original if parsing failed
+            }
+
+            // Format using locale-specific date format
+            return date.toLocaleDateString();
         }
 
-        return date.toLocaleDateString();
+        // Fallback to original format function if not in expected format
+        return formatDate(dateString);
     } catch (error) {
-        console.error('Error formatting date:', error);
+        console.error('Error safely formatting date:', error);
         return dateString;
     }
 }
