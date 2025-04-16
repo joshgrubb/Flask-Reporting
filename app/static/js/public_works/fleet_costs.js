@@ -850,6 +850,7 @@ function initTimeSeriesChart(data, interval) {
                 ]
             },
             options: {
+                
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: {
