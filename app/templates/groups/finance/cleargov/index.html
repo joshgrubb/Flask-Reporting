@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block styles %}
+<!-- Link to the separated CSS file -->
+<link href="{{ url_for('static', filename='css/cleargov.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/finance/">Finance</a></li>
+                <li class="breadcrumb-item active">ClearGov Budget Visualizations</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-chart-pie"></i> {{ title }}</h1>
+        <p class="lead">Interactive dashboard for budget visualization and analysis from ClearGov</p>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> These visualizations are embedded from ClearGov and may take a moment to
+            load. For the best experience, ensure JavaScript is enabled in your browser.
+        </div>
+    </div>
+</div>
+
+<!-- First row - two medium widgets side by side -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="widget-container widget-md">
+            <div class="widget-header">
+                <h3>Total Expenditures</h3>
+                <p class="text-muted">Overview of total town expenditures</p>
+            </div>
+            <div class="widget-content">
+                <!-- Loading indicator -->
+                <div class="loading-indicator" id="loading-total_expenditures">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading widget...</span>
+                    </div>
+                </div>
+
+                <!-- ClearGov Widget -->
+                <div name="total_expenditures" id="cleargov-widget-zpbmwv" data-widget-name="total_expenditures">
+                    <script src="https://cleargov.com/widget/zpbmwv" defer="defer"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="widget-container widget-md">
+            <div class="widget-header">
+                <h3>Fund Expenses</h3>
+                <p class="text-muted">Expenses broken down by fund</p>
+            </div>
+            <div class="widget-content">
+                <div class="loading-indicator" id="loading-fund_expenses">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading widget...</span>
+                    </div>
+                </div>
+                <div name="fund_expenses_12/2024" id="cleargov-widget-yenklmpi" data-widget-name="fund_expenses">
+                    <script src="https://cleargov.com/widget/yenklmpi" defer="defer"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second row - two medium widgets side by side -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="widget-container widget-md">
+            <div class="widget-header">
+                <h3>Cost Recovery Rate</h3>
+                <p class="text-muted">Analysis of cost recovery for town services</p>
+            </div>
+            <div class="widget-content">
+                <div class="loading-indicator" id="loading-cost_recovery_rate">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading widget...</span>
+                    </div>
+                </div>
+                <div name="cost_recovery_rate" id="cleargov-widget-sgqqfzwk" data-widget-name="cost_recovery_rate">
+                    <script src="https://cleargov.com/widget/sgqqfzwk" defer="defer"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="widget-container widget-md">
+            <div class="widget-header">
+                <h3>Expenses by Fund</h3>
+                <p class="text-muted">Detailed breakdown of expenses by fund</p>
+            </div>
+            <div class="widget-content">
+                <div class="loading-indicator" id="loading-expenses_by_fund">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading widget...</span>
+                    </div>
+                </div>
+                <div name="expenses_by_fund" id="cleargov-widget-ohdmvi" data-widget-name="expenses_by_fund">
+                    <script src="https://cleargov.com/widget/ohdmvi" defer="defer"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Third row - two medium widgets side by side -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="widget-container widget-md">
+            <div class="widget-header">
+                <h3>Budget by Department</h3>
+                <p class="text-muted">Departmental budget allocation</p>
+            </div>
+            <div class="widget-content">
+                <div class="loading-indicator" id="loading-budget_by_department">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading widget...</span>
+                    </div>
+                </div>
+                <div name="budget_by_department" id="cleargov-widget-gvtgfy" data-widget-name="budget_by_department">
+                    <script src="https://cleargov.com/widget/gvtgfy" defer="defer"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="widget-container widget-md">
+            <div class="widget-header">
+                <h3>65¢ Ad Valorem</h3>
+                <p class="text-muted">Ad Valorem tax distribution</p>
+            </div>
+            <div class="widget-content">
+                <div class="loading-indicator" id="loading-ad_valorem">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading widget...</span>
+                    </div>
+                </div>
+                <div name="65_cent_ad_valorem" id="cleargov-widget-dwvjkb" data-widget-name="ad_valorem">
+                    <script src="https://cleargov.com/widget/dwvjkb" defer="defer"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fourth row - one medium widget centered -->
+<div class="row mb-4">
+    <div class="col-md-6 offset-md-3">
+        <div class="widget-container widget-md">
+            <div class="widget-header">
+                <h3>Fire Personnel Budget</h3>
+                <p class="text-muted">Fire department personnel funding</p>
+            </div>
+            <div class="widget-content">
+                <div class="loading-indicator" id="loading-fire_personnel_budget">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading widget...</span>
+                    </div>
+                </div>
+                <div name="fire_personnel_budget" id="cleargov-widget-deeymh" data-widget-name="fire_personnel_budget">
+                    <script src="https://cleargov.com/widget/deeymh" defer="defer"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documentation section -->
+<div class="row mt-5">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">About ClearGov Budget Visualizations</h5>
+            </div>
+            <div class="card-body">
+                <p>These visualizations are powered by ClearGov, a platform that helps local governments communicate
+                    financial information in a clear, interactive way.</p>
+                <p>Key features of these visualizations:</p>
+                <ul>
+                    <li><strong>Interactive Elements</strong> - Hover over or click on chart elements to see more
+                        details</li>
+                    <li><strong>Mobile Responsiveness</strong> - Visualizations adapt to different screen sizes</li>
+                    <li><strong>Real-time Updates</strong> - Data is refreshed as new information becomes available in
+                        ClearGov</li>
+                </ul>
+                <p>For more detailed information about town finances, please visit our full ClearGov portal or contact
+                    the Finance Department.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Link to the separated JavaScript file -->
+<script src="{{ url_for('static', filename='js/finance/cleargov.js') }}"></script>
+{% endblock %}

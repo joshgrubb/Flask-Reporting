@@ -1,3 +1,4 @@
+# app/groups/finance/routes.py (updated)
 """
 Finance Module Routes.
 
@@ -30,6 +31,13 @@ def index():
                 "description": "Trends and analysis Budget",
                 "url": "/groups/finance/budget/",
                 "icon": "fa-solid fa-file-invoice-dollar",
+            },
+            {
+                "id": "cleargov",
+                "name": "ClearGov Budget Visualizations",
+                "description": "Interactive budget visualizations from ClearGov",
+                "url": "/groups/finance/cleargov/",
+                "icon": "fa-solid fa-chart-pie",
             },
             # Add more reports as they are implemented
         ]

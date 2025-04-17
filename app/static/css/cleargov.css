@@ -1,0 +1,89 @@
+/* Styles for ClearGov widgets */
+.widget-container {
+    height: 100%;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    background-color: var(--card-background);
+    transition: all 0.3s ease;
+}
+
+.widget-container:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.widget-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--divider-color);
+}
+
+.widget-header h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.widget-header p {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+    color: var(--text-muted);
+}
+
+.widget-content {
+    position: relative;
+    min-height: 300px;
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(var(--background-color-rgb), 0.7);
+    z-index: 10;
+}
+
+/* Widget medium size - consistent for all widgets */
+.widget-md {
+    min-height: 400px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .widget-container {
+        padding: 0.75rem;
+        min-height: auto;
+    }
+
+    .widget-content {
+        min-height: 250px;
+    }
+
+    .widget-md {
+        min-height: auto;
+    }
+
+    /* Center the last widget on mobile */
+    .offset-md-3 {
+        margin-left: 0;
+    }
+}
+
+/* Dark mode considerations for embedded content */
+.dark-mode .widget-container {
+    border-color: var(--border-color);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dark-mode .widget-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .loading-indicator {
+    background-color: rgba(31, 31, 31, 0.7);
+}

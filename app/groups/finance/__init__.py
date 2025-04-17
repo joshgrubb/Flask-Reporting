@@ -1,3 +1,4 @@
+# app/groups/finance/__init__.py (updated)
 """
 Finance Group Module.
 
@@ -19,6 +20,8 @@ from app.groups.finance import routes  # noqa
 
 # Import and register report blueprints
 from app.groups.finance.budget import bp as budget_bp  # noqa
+from app.groups.finance.cleargov import bp as cleargov_bp  # noqa
 
 # Register the report blueprints
 bp.register_blueprint(budget_bp)
+bp.register_blueprint(cleargov_bp)
