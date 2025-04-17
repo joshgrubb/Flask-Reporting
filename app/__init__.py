@@ -53,6 +53,11 @@ def create_app(config_name=None):
     from app.groups import bp as groups_bp
 
     app.register_blueprint(groups_bp)
+    # In app/__init__.py, inside the create_app function
+    from app.core.context_processors import register_context_processors
+
+    # After other app configurations
+    register_context_processors(app)
 
     # Note: The reports blueprint has been removed as all reports
     # have been migrated to the new groups structure

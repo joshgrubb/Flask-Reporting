@@ -3,39 +3,151 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<!-- Search Filter Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <input type="text" id="groupSearch" class="form-control" placeholder="Search groups..."
-            onkeyup="filtergroups()">
+<!-- Welcome Banner -->
+<div class="dashboard-header bg-primary text-white p-4 mb-4 rounded">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2"><i class="fas fa-chart-line"></i> Clayton DataForge</h1>
+            <p class="lead mb-0">Welcome to your centralized reporting platform</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="update-info">
+                <span class="badge bg-light text-dark">Last Update: {% block last_updated %}Today{% endblock %}</span>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- groups Tiles -->
+<!-- Include Quick Access Component -->
+{% include 'components/quick_access.html' %}
+
+<!-- Search Filter Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="input-group">
+            <span class="input-group-text bg-primary text-white"><i class="fas fa-search"></i></span>
+            <input type="text" id="groupSearch" class="form-control form-control-lg"
+                placeholder="Search groups or reports..." onkeyup="filterGroups()">
+        </div>
+    </div>
+</div>
+
+<!-- Groups Tiles in Cards with Hover Effect -->
 <div class="row" id="groupsContainer">
     {% for group in groups %}
-    <div class="col-md-3 col-sm-6 mb-4 group-tile">
-        <a href="{{ group.url }}" class="text-decoration-none">
-            <div class="card h-100 card-hover text-center group-card">
-                <div class="card-body">
-                    <i class="{{ group.icon }} fa-3x mb-3" aria-hidden="true"></i>
-                    <h5 class="card-title">{{ group.name }}</h5>
-                </div>
+    <div class="col-md-4 col-sm-6 mb-4 group-tile">
+        <div class="card h-100 hover-rise">
+            <div class="card-body text-center p-4">
+                <i class="{{ group.icon }} fa-3x mb-3 text-primary" aria-hidden="true"></i>
+                <h4 class="card-title mb-3">{{ group.name }}</h4>
+                <p class="card-text text-muted">{{ group.description }}</p>
             </div>
-        </a>
+            <div class="card-footer bg-transparent border-0 text-center pb-4">
+                <a href="{{ group.url }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-2"></i> View Reports
+                </a>
+            </div>
+        </div>
     </div>
     {% endfor %}
 </div>
 
+<!-- No Results Message (initially hidden) -->
+<div id="noResults" class="alert alert-info text-center mt-4" style="display: none;">
+    <i class="fas fa-info-circle me-2"></i> No groups or reports match your search. Try different keywords.
+</div>
+
 <!-- Interactive Search/Filter Script -->
 <script>
-    function filtergroups() {
+    function filterGroups() {
         var input = document.getElementById("groupSearch").value.toLowerCase();
         var tiles = document.getElementsByClassName("group-tile");
+        var noResults = document.getElementById("noResults");
+        var visibleCount = 0;
+
         for (var i = 0; i < tiles.length; i++) {
             let titleText = tiles[i].querySelector('.card-title').innerText.toLowerCase();
-            tiles[i].style.display = titleText.indexOf(input) > -1 ? "" : "none";
+            let descText = tiles[i].querySelector('.card-text').innerText.toLowerCase();
+
+            if (titleText.indexOf(input) > -1 || descText.indexOf(input) > -1) {
+                tiles[i].style.display = "";
+                visibleCount++;
+            } else {
+                tiles[i].style.display = "none";
+            }
         }
+
+        // Show/hide no results message
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
     }
+
+    // Add animation to cards when page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        const tiles = document.getElementsByClassName("group-tile");
+        for (let i = 0; i < tiles.length; i++) {
+            setTimeout(function () {
+                tiles[i].style.opacity = "1";
+                tiles[i].style.transform = "translateY(0)";
+            }, i * 100);
+        }
+    });
+    // Handle URL search parameter for the dashboard page
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get('search');
+
+        if (searchQuery) {
+            // Auto-fill the search input
+            const groupSearch = document.getElementById('groupSearch');
+            if (groupSearch) {
+                groupSearch.value = searchQuery;
+                // Trigger the filter function
+                filterGroups();
+            }
+
+            // Show a notification that we're filtering by the search term
+            const container = document.querySelector('.container');
+            if (container) {
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info alert-dismissible fade show mt-3';
+                notification.innerHTML = `
+                <i class="fas fa-search"></i> Showing results for: <strong>${searchQuery}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+                container.insertBefore(notification, container.firstChild);
+            }
+        }
+    });  
 </script>
+
+<style>
+    /* Dashboard-specific styles */
+    .group-tile {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--primary-color), #3A78D8) !important;
+    }
+
+    .update-info {
+        padding: 10px;
+    }
+
+    .update-info .badge {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+
+    /* Enhance the form control for search */
+    #groupSearch {
+        border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    }
+
+    .input-group-text {
+        border-radius: var(--border-radius) 0 0 var(--border-radius);
+    }
+</style>
 {% endblock %}

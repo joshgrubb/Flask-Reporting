@@ -1,0 +1,269 @@
+<!-- Quick Report Access Component - Include on dashboard pages -->
+<div class="quick-access-panel my-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-star"></i> Quick Access</h5>
+            <button type="button" class="btn btn-sm btn-outline-light" id="customizeQuickAccess"
+                title="Customize quick access">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row" id="quickAccessGrid">
+                <!-- Most used reports will be automatically populated here based on usage -->
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="/groups/utilities_billing/new_customer_accounts/" class="text-decoration-none">
+                        <div class="quick-access-card p-3 text-center">
+                            <i class="fas fa-user-plus fa-2x mb-2"></i>
+                            <h6>New Customer Accounts</h6>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="/groups/utilities_billing/credit_balance/" class="text-decoration-none">
+                        <div class="quick-access-card p-3 text-center">
+                            <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                            <h6>Credit Balance Report</h6>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="/groups/warehouse/fifo_cost_wo/" class="text-decoration-none">
+                        <div class="quick-access-card p-3 text-center">
+                            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                            <h6>FIFO Cost by Account</h6>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <a href="/groups/finance/budget/" class="text-decoration-none">
+                        <div class="quick-access-card p-3 text-center">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <h6>Budget Dashboard</h6>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Quick access card styling */
+    .quick-access-card {
+        background-color: var(--primary-light);
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid transparent;
+    }
+
+    .quick-access-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .dark-mode .quick-access-card {
+        background-color: var(--surface-color);
+    }
+
+    .dark-mode .quick-access-card:hover {
+        background-color: var(--primary-color);
+    }
+
+    /* Quick access customization modal styling */
+    #customizeModal .report-option {
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: var(--border-radius);
+        background-color: var(--primary-light);
+        cursor: pointer;
+    }
+
+    #customizeModal .report-option.selected {
+        background-color: var(--primary-color);
+        color: white;
+    }
+</style>
+
+<!-- Customize Quick Access Modal -->
+<div class="modal fade" id="customizeModal" tabindex="-1" aria-labelledby="customizeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="customizeModalLabel">Customize Quick Access Reports</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select up to 4 reports to display in your Quick Access panel:</p>
+                <div class="row" id="reportOptions">
+                    <!-- Report options will be dynamically populated -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveQuickAccess">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize quick access customization
+    document.addEventListener('DOMContentLoaded', function () {
+        // Set up customize button click handler
+        const customizeBtn = document.getElementById('customizeQuickAccess');
+        if (customizeBtn) {
+            customizeBtn.addEventListener('click', openCustomizeModal);
+        }
+
+        // Load quick access reports
+        loadQuickAccessReports();
+    });
+
+    /**
+     * Open the customize modal
+     */
+    function openCustomizeModal() {
+        // Report data structure - should match the one in navbar.js
+        const allReports = [
+            { id: 'new_customer', title: "New Customer Accounts", url: "/groups/utilities_billing/new_customer_accounts/", icon: "fas fa-user-plus", group: "Utilities Billing" },
+            { id: 'amount_billed', title: "Amount Billed Search", url: "/groups/utilities_billing/amount_billed_search/", icon: "fas fa-search-dollar", group: "Utilities Billing" },
+            { id: 'moveouts', title: "No Occupant Moveouts", url: "/groups/utilities_billing/no_occupant_list_for_moveouts/", icon: "fas fa-building-circle-arrow-right", group: "Utilities Billing" },
+            { id: 'credit_balance', title: "Credit Balance", url: "/groups/utilities_billing/credit_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
+            { id: 'high_balance', title: "High Balance", url: "/groups/utilities_billing/high_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
+            { id: 'fifo_cost', title: "FIFO Cost by Account", url: "/groups/warehouse/fifo_cost_wo/", icon: "fas fa-clipboard-list", group: "Warehouse" },
+            { id: 'fifo_stock', title: "Inventory Cost Trends", url: "/groups/warehouse/fifo_stock/", icon: "fas fa-chart-line", group: "Warehouse" },
+            { id: 'stock_storeroom', title: "Stock By Storeroom", url: "/groups/warehouse/stock_by_storeroom/", icon: "fas fa-warehouse", group: "Warehouse" },
+            { id: 'budget', title: "Budget Dashboard", url: "/groups/finance/budget/", icon: "fas fa-chart-line", group: "Finance" },
+            { id: 'hydrant', title: "Hydrant History", url: "/groups/water_resources/hydrant_history/", icon: "fas fa-fire-hydrant", group: "Water Resources" },
+            // Add more reports as needed
+        ];
+
+        // Get currently selected reports
+        const selectedReports = JSON.parse(localStorage.getItem('quickAccessReports')) || [
+            'new_customer', 'credit_balance', 'fifo_cost', 'budget'
+        ];
+
+        // Populate report options
+        const reportOptionsContainer = document.getElementById('reportOptions');
+        reportOptionsContainer.innerHTML = '';
+
+        allReports.forEach(report => {
+            const reportOption = document.createElement('div');
+            reportOption.classList.add('col-md-6');
+
+            const reportCard = document.createElement('div');
+            reportCard.classList.add('report-option');
+            reportCard.dataset.reportId = report.id;
+
+            if (selectedReports.includes(report.id)) {
+                reportCard.classList.add('selected');
+            }
+
+            reportCard.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="${report.icon} me-2"></i>
+                    <div>
+                        <div>${report.title}</div>
+                        <small class="text-muted">${report.group}</small>
+                    </div>
+                </div>
+            `;
+
+            reportCard.addEventListener('click', function () {
+                // Toggle selection (limit to 4)
+                if (reportCard.classList.contains('selected')) {
+                    reportCard.classList.remove('selected');
+                } else {
+                    const selectedCount = document.querySelectorAll('.report-option.selected').length;
+                    if (selectedCount < 4) {
+                        reportCard.classList.add('selected');
+                    } else {
+                        // Show error or notification about the limit
+                        alert('You can select a maximum of 4 reports. Please deselect one first.');
+                    }
+                }
+            });
+
+            reportOption.appendChild(reportCard);
+            reportOptionsContainer.appendChild(reportOption);
+        });
+
+        // Save button handler
+        const saveButton = document.getElementById('saveQuickAccess');
+        saveButton.addEventListener('click', function () {
+            const selectedOptions = document.querySelectorAll('.report-option.selected');
+            const selectedIds = Array.from(selectedOptions).map(option => option.dataset.reportId);
+
+            // Save to localStorage
+            localStorage.setItem('quickAccessReports', JSON.stringify(selectedIds));
+
+            // Update the quick access panel
+            loadQuickAccessReports();
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('customizeModal'));
+            modal.hide();
+        });
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('customizeModal'));
+        modal.show();
+    }
+
+    /**
+     * Load and display quick access reports
+     */
+    function loadQuickAccessReports() {
+        // Report data structure - should match the one in navbar.js
+        const allReports = [
+            { id: 'new_customer', title: "New Customer Accounts", url: "/groups/utilities_billing/new_customer_accounts/", icon: "fas fa-user-plus", group: "Utilities Billing" },
+            { id: 'amount_billed', title: "Amount Billed Search", url: "/groups/utilities_billing/amount_billed_search/", icon: "fas fa-search-dollar", group: "Utilities Billing" },
+            { id: 'moveouts', title: "No Occupant Moveouts", url: "/groups/utilities_billing/no_occupant_list_for_moveouts/", icon: "fas fa-building-circle-arrow-right", group: "Utilities Billing" },
+            { id: 'credit_balance', title: "Credit Balance", url: "/groups/utilities_billing/credit_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
+            { id: 'high_balance', title: "High Balance", url: "/groups/utilities_billing/high_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
+            { id: 'fifo_cost', title: "FIFO Cost by Account", url: "/groups/warehouse/fifo_cost_wo/", icon: "fas fa-clipboard-list", group: "Warehouse" },
+            { id: 'fifo_stock', title: "Inventory Cost Trends", url: "/groups/warehouse/fifo_stock/", icon: "fas fa-chart-line", group: "Warehouse" },
+            { id: 'stock_storeroom', title: "Stock By Storeroom", url: "/groups/warehouse/stock_by_storeroom/", icon: "fas fa-warehouse", group: "Warehouse" },
+            { id: 'budget', title: "Budget Dashboard", url: "/groups/finance/budget/", icon: "fas fa-chart-line", group: "Finance" },
+            { id: 'hydrant', title: "Hydrant History", url: "/groups/water_resources/hydrant_history/", icon: "fas fa-fire-hydrant", group: "Water Resources" },
+            // Add more reports as needed
+        ];
+
+        // Get selected reports
+        const selectedReports = JSON.parse(localStorage.getItem('quickAccessReports')) || [
+            'new_customer', 'credit_balance', 'fifo_cost', 'budget'
+        ];
+
+        // Get quick access grid
+        const quickAccessGrid = document.getElementById('quickAccessGrid');
+        if (!quickAccessGrid) return;
+
+        // Clear grid
+        quickAccessGrid.innerHTML = '';
+
+        // Add selected reports
+        selectedReports.forEach(reportId => {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+
+            const reportCol = document.createElement('div');
+            reportCol.classList.add('col-md-3', 'col-sm-6', 'mb-3');
+
+            reportCol.innerHTML = `
+                <a href="${report.url}" class="text-decoration-none">
+                    <div class="quick-access-card p-3 text-center">
+                        <i class="${report.icon} fa-2x mb-2"></i>
+                        <h6>${report.title}</h6>
+                    </div>
+                </a>
+            `;
+
+            quickAccessGrid.appendChild(reportCol);
+        });
+    }
+</script>

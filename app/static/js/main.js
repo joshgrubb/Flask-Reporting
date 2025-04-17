@@ -702,3 +702,155 @@ function toggleDarkMode(e) {
     // Dispatch the custom event
     document.dispatchEvent(darkModeChangedEvent);
 }
+/**
+ * Enhanced Navigation Functionality
+ * - Tracks recently viewed reports
+ * - Provides quick search across all reports
+ * - Handles responsive navigation
+ */
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize recent reports tracking
+    initRecentReports();
+
+    // Initialize report search
+    initReportSearch();
+
+    // Add current page to recent reports
+    trackCurrentPage();
+});
+
+/**
+ * Initialize and display recent reports
+ */
+function initRecentReports() {
+    const recentReportsMenu = document.getElementById('recentReportsMenu');
+    const recentReportsList = document.getElementById('recentReportsList');
+
+    if (!recentReportsList) return;
+
+    // Get recent reports from localStorage
+    const recentReports = getRecentReports();
+
+    // Clear the "no recent reports" message if we have reports
+    if (recentReports.length > 0) {
+        recentReportsList.innerHTML = '';
+    }
+
+    // Add recent reports to the dropdown
+    recentReports.forEach(report => {
+        const reportItem = document.createElement('a');
+        reportItem.classList.add('dropdown-item');
+        reportItem.href = report.url;
+
+        // Create report display with icon
+        const icon = document.createElement('i');
+        icon.className = report.icon || 'fas fa-file-alt';
+        icon.style.marginRight = '8px';
+
+        reportItem.appendChild(icon);
+        reportItem.appendChild(document.createTextNode(report.title));
+
+        recentReportsList.appendChild(reportItem);
+    });
+}
+
+/**
+ * Track the current page in recent reports
+ */
+function trackCurrentPage() {
+    // Get current page info from metadata
+    const currentUrl = window.location.pathname;
+
+    // Skip tracking for main pages
+    if (currentUrl === '/' || currentUrl === '/groups/' || currentUrl.endsWith('/dashboard.html')) {
+        return;
+    }
+
+    // Get page title and icon
+    const pageTitle = document.title.replace(' - Clayton DataForge', '');
+
+    // Try to find an icon in the breadcrumb or page header
+    let pageIcon = 'fas fa-file-alt'; // Default icon
+
+    const breadcrumbIcon = document.querySelector('.breadcrumb-item.active i');
+    const headerIcon = document.querySelector('h1 i');
+
+    if (headerIcon) {
+        pageIcon = headerIcon.className;
+    } else if (breadcrumbIcon) {
+        pageIcon = breadcrumbIcon.className;
+    }
+
+    // Add to recent reports
+    addRecentReport({
+        url: currentUrl,
+        title: pageTitle,
+        icon: pageIcon,
+        timestamp: new Date().getTime()
+    });
+}
+
+/**
+ * Get recent reports from localStorage
+ * @returns {Array} Array of recent report objects
+ */
+function getRecentReports() {
+    try {
+        const reports = JSON.parse(localStorage.getItem('recentReports')) || [];
+        // Sort by timestamp (most recent first) and limit to 5
+        return reports.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
+    } catch (e) {
+        console.error('Error retrieving recent reports:', e);
+        return [];
+    }
+}
+
+/**
+ * Add a report to recent reports
+ * @param {Object} report Report object with url, title, and timestamp
+ */
+function addRecentReport(report) {
+    try {
+        const reports = JSON.parse(localStorage.getItem('recentReports')) || [];
+
+        // Check if report already exists
+        const existingIndex = reports.findIndex(r => r.url === report.url);
+
+        if (existingIndex >= 0) {
+            // Update existing report
+            reports[existingIndex] = report;
+        } else {
+            // Add new report
+            reports.push(report);
+        }
+
+        // Keep only the 10 most recent reports
+        const recentReports = reports
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 10);
+
+        localStorage.setItem('recentReports', JSON.stringify(recentReports));
+    } catch (e) {
+        console.error('Error saving recent reports:', e);
+    }
+}
+
+
+/**
+ * Debounce function to limit how often a function can run
+ * @param {Function} func The function to debounce
+ * @param {number} wait Wait time in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function () {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(function () {
+            func.apply(context, args);
+        }, wait);
+    };
+}
