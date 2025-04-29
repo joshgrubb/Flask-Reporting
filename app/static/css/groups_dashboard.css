@@ -1,0 +1,86 @@
+/* Dashboard-specific styles */
+.group-tile {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, var(--primary-color), #3A78D8) !important;
+}
+
+.update-info {
+    padding: 10px;
+}
+
+.update-info .badge {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+/* Enhanced card-link styling */
+.card-link {
+    display: block;
+    color: inherit;
+    height: 100%;
+}
+
+.card-link:hover {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Clickable card styling */
+.clickable-card {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.clickable-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.card-click-hint {
+    opacity: 0;
+    color: var(--primary-color);
+    transition: opacity 0.3s ease;
+}
+
+.clickable-card:hover .card-click-hint {
+    opacity: 1;
+}
+
+.clickable-card:hover .card-title {
+    color: var(--primary-color);
+}
+
+/* Add a subtle overlay effect on hover */
+.clickable-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(var(--primary-color-rgb), 0);
+    transition: background-color 0.3s ease;
+    pointer-events: none;
+    border-radius: var(--border-radius);
+}
+
+.clickable-card:hover::after {
+    background-color: rgba(var(--primary-color-rgb), 0.05);
+}
+
+/* Enhance the form control for search */
+#groupSearch {
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.input-group-text {
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
+}
