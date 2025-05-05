@@ -1,4 +1,3 @@
-# app/groups/water_resources/routes.py
 """
 Water Resources Module Routes.
 
@@ -9,6 +8,10 @@ import logging
 from flask import render_template
 
 from app.groups.water_resources import bp
+from app.shared.labor_requests import register_labor_requests_routes
+
+# Register shared labor requests routes with this blueprint
+register_labor_requests_routes(bp)
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -31,6 +34,13 @@ def index():
                 "description": "View hydrant inspection and work order history",
                 "url": "/groups/water_resources/hydrant_history/",
                 "icon": "fas fa-history",
+            },
+            {
+                "id": "labor_requests",
+                "name": "Labor Requests",
+                "description": "View and analyze labor requests",
+                "url": "/groups/water_resources/labor_requests/",
+                "icon": "fas fa-user-hard-hat",
             },
             # Add more reports as they are implemented
         ]

@@ -115,6 +115,11 @@ def get_navigation_data():
                         "url": "/groups/public_works/vehicle_fleet/",
                     },
                     {"name": "Fleet Costs", "url": "/groups/public_works/fleet_costs/"},
+                    # Add Labor Requests report to Public Works
+                    {
+                        "name": "Labor Requests",
+                        "url": "/groups/public_works/labor_requests/",
+                    },
                 ],
             },
             {
@@ -144,6 +149,11 @@ def get_navigation_data():
                     {
                         "name": "Hydrant History",
                         "url": "/groups/water_resources/hydrant_history/",
+                    },
+                    # Add Labor Requests report to Water Resources
+                    {
+                        "name": "Labor Requests",
+                        "url": "/groups/water_resources/labor_requests/",
                     },
                 ],
             },

@@ -23,6 +23,7 @@ from app.groups.public_works.solid_waste import bp as solid_waste_bp  # noqa
 from app.groups.public_works.vehicle_fleet import bp as vehicle_fleet_bp  # noqa
 from app.groups.public_works.fleet_costs import bp as fleet_costs_bp  # noqa
 
+
 # Register the report blueprints
 bp.register_blueprint(solid_waste_bp)
 bp.register_blueprint(vehicle_fleet_bp)

@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block cdn_resources %}
+{{ include_cdn(bundles=["datatables", "chartjs", "datepicker"]) }}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/{{ current_group }}/">{{ current_group|title }}</a></li>
+                <li class="breadcrumb-item active">Labor Requests</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-user-hard-hat"></i> {{ title }}</h1>
+        <p class="lead">View and analyze labor requests by category and date range.</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="filters">
+            <form id="reportFilters">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" name="start_date"
+                            value="{{ default_start_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate" name="end_date"
+                            value="{{ default_end_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="categorySelect" class="form-label">Request Category</label>
+                        <select class="form-select" id="categorySelect" name="category">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.REQCATEGORY }}">{{ category.REQCATEGORY }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" id="applyFilters" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Apply Filter
+                        </button>
+                        <button type="button" id="resetFilters" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-clipboard-list"></i> Total Requests
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalRequests">-</h2>
+                <p class="text-muted" id="dateRangeInfo">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-clock"></i> Total Hours
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalHours">-</h2>
+                <p class="text-muted" id="categoryInfo">All categories</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-dollar-sign"></i> Total Cost
+                </h5>
+                <h2 class="mt-3 mb-0" id="totalCost">-</h2>
+                <p class="text-muted">Labor costs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-calculator"></i> Average Rate
+                </h5>
+                <h2 class="mt-3 mb-0" id="averageRate">-</h2>
+                <p class="text-muted">Cost per hour</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Labor Hours by Category</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Labor Costs Over Time</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="timeSeriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Labor Requests</h5>
+                <button id="exportData" class="btn btn-success btn-sm">
+                    <i class="fas fa-file-export"></i> Export to CSV
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="dataTableContainer" class="loading">
+                    <table id="laborRequestsTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Labor Name</th>
+                                <th>Hours</th>
+                                <th>Cost</th>
+                                <th>Transaction Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About Section -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">About This Report</h5>
+            </div>
+            <div class="card-body">
+                <p>This report displays labor requests from the CityWorks system with the following information:</p>
+                <ul>
+                    <li><strong>Request ID:</strong> The unique identifier for the request</li>
+                    <li><strong>Description:</strong> The description of the request</li>
+                    <li><strong>Category:</strong> The category of the request</li>
+                    <li><strong>Labor Name:</strong> The name of the labor resource</li>
+                    <li><strong>Hours:</strong> The number of labor hours</li>
+                    <li><strong>Cost:</strong> The labor cost</li>
+                    <li><strong>Transaction Date:</strong> The date of the labor transaction</li>
+                </ul>
+                <p>Use the filters at the top to narrow down results by date range or specific category.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Custom JS for this report -->
+<script src="{{ url_for('static', filename='js/shared/labor_requests.js') }}"></script>
+{% endblock %}

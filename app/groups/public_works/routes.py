@@ -8,6 +8,10 @@ import logging
 from flask import render_template
 
 from app.groups.public_works import bp
+from app.shared.labor_requests import register_labor_requests_routes
+
+# Register shared labor requests routes with this blueprint
+register_labor_requests_routes(bp)
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -26,26 +30,32 @@ def index():
         reports = [
             {
                 "id": "solid_waste",
-                "name": "Solid Waste Billing",
-                "description": "Solid Waste Billing Data for Town Provided Waste Pickup",
+                "name": "Solid Waste",
+                "description": "View solid waste collection analytics",
                 "url": "/groups/public_works/solid_waste/",
-                "icon": "fa-solid fa-trash",
+                "icon": "fas fa-trash",
             },
             {
                 "id": "vehicle_fleet",
-                "name": "Vehicle Fleet Dashboard",
-                "description": "Vehicle Replacement Scores and GeoTab Alerts",
+                "name": "Vehicle Fleet",
+                "description": "Monitor vehicle fleet metrics",
                 "url": "/groups/public_works/vehicle_fleet/",
-                "icon": "fa-solid fa-car",
+                "icon": "fas fa-car",
             },
             {
                 "id": "fleet_costs",
-                "name": "Vehicle Fleet Costs",
-                "description": "Vehicle Fleet costs by department and vehicle",
+                "name": "Fleet Costs",
+                "description": "Analyze vehicle maintenance costs",
                 "url": "/groups/public_works/fleet_costs/",
-                "icon": "fa-solid fa-dollar-sign",
+                "icon": "fas fa-dollar-sign",
             },
-            # Add more reports as they are implemented
+            {
+                "id": "labor_requests",
+                "name": "Labor Requests",
+                "description": "View and analyze labor requests",
+                "url": "/groups/public_works/labor_requests/",
+                "icon": "fas fa-user-hard-hat",
+            },
         ]
 
         # Log that we're rendering the dashboard
@@ -53,7 +63,7 @@ def index():
 
         return render_template(
             "groups/public_works/dashboard.html",
-            title="Public Works Reports Dashboard",
+            title="Public Works Reports",
             reports=reports,
         )
 

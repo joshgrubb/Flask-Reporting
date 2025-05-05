@@ -754,7 +754,26 @@ function initRecentReports() {
         recentReportsList.appendChild(reportItem);
     });
 }
+/**
+ * Initialize report search functionality
+ * This is a placeholder function to fix the "initReportSearch is not defined" error
+ */
+function initReportSearch() {
+    // This function is a placeholder to prevent errors
+    console.log("Report search initialization bypassed");
+}
 
+// Call the function when the DOM is loaded to prevent errors
+document.addEventListener('DOMContentLoaded', function () {
+    // Check if the function should be called
+    try {
+        if (typeof initReportSearch === 'function') {
+            initReportSearch();
+        }
+    } catch (e) {
+        console.warn("Report search initialization not available");
+    }
+});
 /**
  * Track the current page in recent reports
  */

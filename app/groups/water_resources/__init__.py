@@ -21,4 +21,5 @@ from app.groups.water_resources import routes  # noqa
 # Import and register hydrant_history blueprint
 from app.groups.water_resources.hydrant_history import bp as hydrant_history_bp  # noqa
 
+
 bp.register_blueprint(hydrant_history_bp)
