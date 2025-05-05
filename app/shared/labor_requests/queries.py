@@ -61,9 +61,6 @@ def get_labor_requests(start_date=None, end_date=None, category=None):
     start_date_str = format_date_for_query(start_date)
     end_date_str = format_date_for_query(end_date)
 
-    # Parameters
-    params = [start_date_str, end_date_str]
-
     # Build the base query
     query = """
     SELECT
@@ -81,6 +78,9 @@ def get_labor_requests(start_date=None, end_date=None, category=None):
     WHERE
         CW.[azteca].REQUESTLABOR.TRANSDATE BETWEEN ? AND ?
     """
+
+    # Parameters - using ? placeholder style for pyodbc
+    params = [start_date_str, end_date_str]
 
     # Add category filter if provided
     if category:

@@ -35,14 +35,14 @@ def register_labor_requests_routes(bp, url_prefix="/labor_requests"):
         url_prefix (str): URL prefix for all routes. Defaults to "/labor_requests".
     """
     logger.info("Registering labor requests routes with blueprint: %s", bp.name)
-    
+
     # Define the routes as local functions within the registration function
-    
+
     @bp.route(f"{url_prefix}/")
     def labor_requests_index():
         """
         Render the main labor requests report page.
-
+    
         Returns:
             str: Rendered HTML template.
         """
@@ -50,22 +50,13 @@ def register_labor_requests_routes(bp, url_prefix="/labor_requests"):
             # Default to last 30 days
             end_date = datetime.now().strftime("%Y-%m-%d")
             start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-
+    
             # Get categories for the dropdown
             query, params, db_key = get_request_categories()
             
-            # Mock categories for testing if needed
-            # Replace this with actual database call when ready
-            categories = [
-                {"REQCATEGORY": "Water"},
-                {"REQCATEGORY": "Sewer"},
-                {"REQCATEGORY": "Roads"},
-                {"REQCATEGORY": "Buildings"},
-            ]
-            
-            # Uncomment when database is ready
-            # categories = execute_query(query, params, db_key=db_key)
-
+            # Get actual categories from database
+            categories = execute_query(query, params, db_key=db_key)
+    
             return render_template(
                 "shared/labor_requests/index.html",
                 title="Labor Requests Report",
@@ -75,7 +66,7 @@ def register_labor_requests_routes(bp, url_prefix="/labor_requests"):
                 # Include the current group in the template context for breadcrumb navigation
                 current_group=bp.name,
             )
-
+    
         except Exception as e:
             logger.error("Error rendering labor requests report index: %s", str(e))
             return render_template("error.html", error=str(e))
@@ -113,39 +104,8 @@ def register_labor_requests_routes(bp, url_prefix="/labor_requests"):
                 start_date, end_date, category if category else None
             )
 
-            # Mock data for testing if needed
-            results = [
-                {
-                    "REQUESTID": "REQ-1001",
-                    "LABORNAME": "John Smith",
-                    "HOURS": 8.5,
-                    "COST": 340.00,
-                    "TRANSDATE": "2025-04-15T08:30:00",
-                    "DESCRIPTION": "Water main repair",
-                    "REQCATEGORY": "Water"
-                },
-                {
-                    "REQUESTID": "REQ-1002",
-                    "LABORNAME": "Maria Garcia",
-                    "HOURS": 6.0,
-                    "COST": 240.00,
-                    "TRANSDATE": "2025-04-16T09:15:00",
-                    "DESCRIPTION": "Sewer backup",
-                    "REQCATEGORY": "Sewer"
-                },
-                {
-                    "REQUESTID": "REQ-1003",
-                    "LABORNAME": "Robert Johnson",
-                    "HOURS": 4.5,
-                    "COST": 180.00,
-                    "TRANSDATE": "2025-04-18T14:00:00",
-                    "DESCRIPTION": "Pothole repair",
-                    "REQCATEGORY": "Roads"
-                }
-            ]
-            
-            # Uncomment when database is ready
-            # results = execute_query(query, params, db_key=db_key)
+            # Execute query to get real data from database
+            results = execute_query(query, params, db_key=db_key)
 
             # Process date fields for JSON serialization
             for row in results:
@@ -207,39 +167,8 @@ def register_labor_requests_routes(bp, url_prefix="/labor_requests"):
                 start_date, end_date, category if category else None
             )
 
-            # Mock data for testing
-            results = [
-                {
-                    "REQUESTID": "REQ-1001",
-                    "LABORNAME": "John Smith",
-                    "HOURS": 8.5,
-                    "COST": 340.00,
-                    "TRANSDATE": "2025-04-15T08:30:00",
-                    "DESCRIPTION": "Water main repair",
-                    "REQCATEGORY": "Water"
-                },
-                {
-                    "REQUESTID": "REQ-1002",
-                    "LABORNAME": "Maria Garcia",
-                    "HOURS": 6.0,
-                    "COST": 240.00,
-                    "TRANSDATE": "2025-04-16T09:15:00",
-                    "DESCRIPTION": "Sewer backup",
-                    "REQCATEGORY": "Sewer"
-                },
-                {
-                    "REQUESTID": "REQ-1003",
-                    "LABORNAME": "Robert Johnson",
-                    "HOURS": 4.5,
-                    "COST": 180.00,
-                    "TRANSDATE": "2025-04-18T14:00:00",
-                    "DESCRIPTION": "Pothole repair",
-                    "REQCATEGORY": "Roads"
-                }
-            ]
-            
-            # Uncomment when database is ready
-            # results = execute_query(query, params, db_key=db_key)
+            # Execute query to get real data from database
+            results = execute_query(query, params, db_key=db_key)
 
             if not results:
                 return jsonify({"success": False, "error": "No data to export"}), 404
@@ -289,6 +218,3 @@ def register_labor_requests_routes(bp, url_prefix="/labor_requests"):
         except Exception as e:
             logger.error("Error exporting labor requests: %s", str(e))
             return jsonify({"success": False, "error": str(e)}), 500
-            
-    # Log that registration is complete
-    logger.info("Labor requests routes registered successfully with blueprint: %s", bp.name)
