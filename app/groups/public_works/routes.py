@@ -71,10 +71,10 @@ def index():
                 "icon": "fas fa-search",
             },
             {
-                "id": "work_order_details",
-                "name": "Work Order Details",
-                "description": "Search for specific work orders",
-                "url": "/groups/water_resources/work_order_details/",
+                "id": "work_order_search",
+                "name": "Work Order Search",
+                "description": "Search for specific a work order",
+                "url": "/groups/public_works/work_orders/search",
                 "icon": "fas fa-search",
             },
         ]

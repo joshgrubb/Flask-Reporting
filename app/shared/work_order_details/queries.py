@@ -114,21 +114,23 @@ def get_work_order_labor(work_order_id):
     # Build the query for work order labor
     query = """
     SELECT
-        L.WORKORDERID,
-        L.LABORPHASEID,
-        L.LABORCODE,
-        L.EMPLOYEESID,
-        E.LASTNAME,
-        E.FIRSTNAME,
-        L.HOURS,
-        L.COST,
-        L.COMPLETEDATE,
-        L.COMMENTS
-    FROM CW.[azteca].LABOR AS L
-    LEFT JOIN CW.[azteca].EMPLOYEE AS E
-        ON L.EMPLOYEESID = E.EMPLOYEESID
-    WHERE L.WORKORDERID = ?
-    ORDER BY L.COMPLETEDATE DESC
+        CW.[azteca].LABORCOSTACT.WORKORDERID,
+        CW.[azteca].LABORCOSTACT.LABORNAME,
+        CW.[azteca].LABORCOSTACT.REGULARCOST,
+        CW.[azteca].LABORCOSTACT.HOURS,
+        CW.[azteca].LABORCOSTACT.TRANSDATE,
+        CW.[azteca].WORKORDER.ACTUALSTARTDATE,
+        CW.[azteca].WORKORDER.ACTUALFINISHDATE,
+        CW.[azteca].WORKORDER.DESCRIPTION,
+        CW.[azteca].WORKORDER.ISREACTIVE,
+        CW.[azteca].WORKORDER.WOCATEGORY,
+        CW.[azteca].LABORCOSTACT.LABORTYPE
+    FROM CW.[azteca].LABORCOSTACT
+        INNER JOIN
+        CW.[azteca].WORKORDER
+        ON CW.[azteca].LABORCOSTACT.WORKORDERID = CW.[azteca].WORKORDER.WORKORDERID
+    WHERE CW.[azteca].LABORCOSTACT.WORKORDERID = ?
+    ORDER BY CW.[azteca].WORKORDER.ACTUALFINISHDATE DESC
     """
 
     # Parameters

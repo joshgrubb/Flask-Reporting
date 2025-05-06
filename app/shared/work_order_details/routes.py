@@ -1,4 +1,3 @@
-# app/shared/work_order_details/routes.py
 """
 Work Order Details Routes.
 
@@ -107,4 +106,23 @@ def register_work_order_details_routes(bp, url_prefix="/work_orders"):
 
         except Exception as e:
             logger.error("Error retrieving work order details: %s", str(e))
+            return render_template("error.html", error=str(e))
+
+    # Define a search route for work orders
+    @bp.route(f"{url_prefix}/search")
+    def work_order_search():
+        """
+        Search for work orders based on criteria.
+
+        Returns:
+            str: Rendered HTML template with search form.
+        """
+        try:
+            return render_template(
+                "shared/work_order_details/search.html",
+                title="Search Work Orders",
+                current_group=bp.name,
+            )
+        except Exception as e:
+            logger.error("Error rendering work order search page: %s", str(e))
             return render_template("error.html", error=str(e))

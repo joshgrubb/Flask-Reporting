@@ -12,15 +12,17 @@ from app.shared.labor_requests import register_labor_requests_routes
 from app.shared.work_order_comments import register_work_order_comments_routes
 from app.shared.work_order_details import register_work_order_details_routes
 
+# Configure logger
+logger = logging.getLogger(__name__)
+
 # Register shared labor requests routes with this blueprint
 register_labor_requests_routes(bp)
 
 # Register shared work order comments routes with this blueprint
 register_work_order_comments_routes(bp)
 
+# Register shared work order details routes with this blueprint
 register_work_order_details_routes(bp)
-# Configure logger
-logger = logging.getLogger(__name__)
 
 
 @bp.route("/")
@@ -63,10 +65,10 @@ def index():
                 "icon": "fas fa-search",
             },
             {
-                "id": "work_order_details",
-                "name": "Work Order Details",
-                "description": "Search for specific work orders",
-                "url": "/groups/water_resources/work_order_details/",
+                "id": "work_order_search",
+                "name": "Work Order Search",
+                "description": "Search for specific a work order",
+                "url": "/groups/water_resources/work_orders/search",
                 "icon": "fas fa-search",
             },
             # Add more reports as they are implemented
