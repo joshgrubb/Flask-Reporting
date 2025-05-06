@@ -36,11 +36,18 @@ def index():
                 "icon": "fas fa-history",
             },
             {
+                "id": "sewer_clean_length",
+                "name": "Sewer Clean Length",
+                "description": "View sanitary sewer cleaning lengths by work order",
+                "url": "/groups/water_resources/sewer_clean_length/",
+                "icon": "fas fa-broom",
+            },
+            {
                 "id": "labor_requests",
                 "name": "Labor Requests",
                 "description": "View and analyze labor requests",
                 "url": "/groups/water_resources/labor_requests/",
-                "icon": "fas fa-user-hard-hat",
+                "icon": "fas fa-hard-hat",
             },
             # Add more reports as they are implemented
         ]

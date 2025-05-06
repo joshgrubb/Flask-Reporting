@@ -54,7 +54,7 @@ def index():
                 "name": "Labor Requests",
                 "description": "View and analyze labor requests",
                 "url": "/groups/public_works/labor_requests/",
-                "icon": "fas fa-user-hard-hat",
+                "icon": "fas fa-hard-hat",
             },
         ]
 

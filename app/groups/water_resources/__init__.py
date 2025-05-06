@@ -21,5 +21,10 @@ from app.groups.water_resources import routes  # noqa
 # Import and register hydrant_history blueprint
 from app.groups.water_resources.hydrant_history import bp as hydrant_history_bp  # noqa
 
+# Import and register sewer_clean_length blueprint
+from app.groups.water_resources.sewer_clean_length import (
+    bp as sewer_clean_length_bp,
+)  # noqa
 
 bp.register_blueprint(hydrant_history_bp)
+bp.register_blueprint(sewer_clean_length_bp)
