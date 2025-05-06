@@ -1,13 +1,18 @@
 """
-Shared Modules Package.
+Work Order Details Module.
 
-This package contains modules that can be shared across different
-group blueprints in the application.
+This module provides a shareable report for viewing work order details
+that can be accessed from multiple group blueprints.
 """
 
-import logging
 
-# Configure logger
-logger = logging.getLogger(__name__)
+# Directly define the function here to avoid circular imports
+def register_work_order_details_routes(bp, url_prefix="/work_orders"):
+    """Import and register the routes with the given blueprint."""
+    from app.shared.work_order_details.routes import setup_routes
 
-logger.info("Initialized shared modules package")
+    return setup_routes(bp, url_prefix)
+
+
+# Export the registration function
+__all__ = ["register_work_order_details_routes"]

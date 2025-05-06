@@ -1,0 +1,297 @@
+<!-- app/templates/shared/work_order_details/index.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block cdn_resources %}
+{{ include_cdn(bundles=["datatables"]) }}
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
+                <li class="breadcrumb-item"><a href="/groups/{{ current_group }}/">{{ current_group|title }}</a></li>
+                <li class="breadcrumb-item active">Work Order {{ work_order.WORKORDERID }}</li>
+            </ol>
+        </nav>
+        <h1>
+            <i class="fas fa-clipboard-list"></i> Work Order {{ work_order.WORKORDERID }}
+            <span
+                class="badge {% if work_order.STATUS == 'COMPLETE' %}bg-success{% elif work_order.STATUS == 'CANCEL' %}bg-danger{% else %}bg-primary{% endif %}">
+                {{ work_order.STATUS }}
+            </span>
+        </h1>
+        <p class="lead">{{ work_order.DESCRIPTION }}</p>
+    </div>
+</div>
+
+<!-- Work Order Details -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Work Order Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>General Information</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Description</th>
+                                    <td>{{ work_order.DESCRIPTION or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Category</th>
+                                    <td>{{ work_order.WOCATEGORY or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Shop</th>
+                                    <td>{{ work_order.SHOP or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Location</th>
+                                    <td>{{ work_order.LOCATION or work_order.WOADDRESS or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Street</th>
+                                    <td>{{ work_order.STREETNAME or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">District</th>
+                                    <td>{{ work_order.DISTRICT or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Priority</th>
+                                    <td>{{ work_order.PRIORITY or 'N/A' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Dates & Personnel</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Status</th>
+                                    <td>{{ work_order.STATUS or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Initiated By</th>
+                                    <td>{{ work_order.INITIATEDBY or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Requested By</th>
+                                    <td>{{ work_order.REQUESTEDBY or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Supervisor</th>
+                                    <td>{{ work_order.SUPERVISOR or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Initiated Date</th>
+                                    <td>{{ work_order.INITIATEDATE or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Actual Start Date</th>
+                                    <td>{{ work_order.ACTUALSTARTDATE or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Actual Finish Date</th>
+                                    <td>{{ work_order.ACTUALFINISHDATE or 'N/A' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6>Costs</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Total Cost</th>
+                                    <td>${{ work_order.WOCOST|float|round(2) if work_order.WOCOST else '0.00' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Labor Cost</th>
+                                    <td>${{ work_order.WOLABORCOST|float|round(2) if work_order.WOLABORCOST else '0.00'
+                                        }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Material Cost</th>
+                                    <td>${{ work_order.WOMATCOST|float|round(2) if work_order.WOMATCOST else '0.00' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Equipment Cost</th>
+                                    <td>${{ work_order.WOEQUIPCOST|float|round(2) if work_order.WOEQUIPCOST else '0.00'
+                                        }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Project Information</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Project Name</th>
+                                    <td>{{ work_order.PROJECTNAME or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Project Start Date</th>
+                                    <td>{{ work_order.PROJSTARTDATE or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Project Finish Date</th>
+                                    <td>{{ work_order.PROJFINISHDATE or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Completed By</th>
+                                    <td>{{ work_order.WORKCOMPLETEDBY or 'N/A' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for Comments and Labor -->
+<div class="row">
+    <div class="col">
+        <ul class="nav nav-tabs" id="woDetailsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments"
+                    type="button" role="tab" aria-controls="comments" aria-selected="true">
+                    <i class="fas fa-comments"></i> Comments ({{ comments|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="labor-tab" data-bs-toggle="tab" data-bs-target="#labor" type="button"
+                    role="tab" aria-controls="labor" aria-selected="false">
+                    <i class="fas fa-hard-hat"></i> Labor Entries ({{ labor|length }})
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="woDetailsTabsContent">
+            <!-- Comments Tab -->
+            <div class="tab-pane fade show active" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+                <div class="card border-top-0 rounded-top-0">
+                    <div class="card-body">
+                        {% if comments %}
+                        <div class="table-responsive">
+                            <table id="commentsTable" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Author</th>
+                                        <th>Comment</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for comment in comments %}
+                                    <tr>
+                                        <td>{{ comment.AUTHOR_NAME }}</td>
+                                        <td>{{ comment.COMMENTS }}</td>
+                                        <td>{{ comment.DATECREATED }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No comments found for this work order.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Labor Tab -->
+            <div class="tab-pane fade" id="labor" role="tabpanel" aria-labelledby="labor-tab">
+                <div class="card border-top-0 rounded-top-0">
+                    <div class="card-body">
+                        {% if labor %}
+                        <div class="table-responsive">
+                            <table id="laborTable" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Hours</th>
+                                        <th>Cost</th>
+                                        <th>Date</th>
+                                        <th>Comments</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in labor %}
+                                    <tr>
+                                        <td>{{ entry.EMPLOYEE_NAME }}</td>
+                                        <td>{{ entry.HOURS }}</td>
+                                        <td>${{ entry.COST|float|round(2) if entry.COST else '0.00' }}</td>
+                                        <td>{{ entry.COMPLETEDATE }}</td>
+                                        <td>{{ entry.COMMENTS or '' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No labor entries found for this work order.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        // Initialize DataTables if they exist
+        if ($.fn.DataTable) {
+            if ($('#commentsTable').length) {
+                $('#commentsTable').DataTable({
+                    order: [[2, 'desc']], // Sort by date, newest first
+                    language: {
+                        search: "Filter:",
+                        lengthMenu: "Show _MENU_ entries",
+                        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                        infoEmpty: "Showing 0 to 0 of 0 entries",
+                        infoFiltered: "(filtered from _MAX_ total entries)"
+                    }
+                });
+            }
+
+            if ($('#laborTable').length) {
+                $('#laborTable').DataTable({
+                    order: [[3, 'desc']], // Sort by date, newest first
+                    language: {
+                        search: "Filter:",
+                        lengthMenu: "Show _MENU_ entries",
+                        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                        infoEmpty: "Showing 0 to 0 of 0 entries",
+                        infoFiltered: "(filtered from _MAX_ total entries)"
+                    }
+                });
+            }
+        }
+    });
+</script>
+{% endblock %}

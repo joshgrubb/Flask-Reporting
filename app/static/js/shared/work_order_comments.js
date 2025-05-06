@@ -163,7 +163,10 @@ function initCommentsTable(data) {
             {
                 data: 'WORKORDERID',
                 render: function (data) {
-                    return `<a href="#" class="work-order-link" data-id="${data}">${data}</a>`;
+                    // Link directly to the work order details page
+                    const currentGroup = getCurrentGroup();
+                    const url = `/groups/${currentGroup}/work_orders/${data}`;
+                    return `<a href="${url}" class="work-order-link">${data}</a>`;
                 }
             },
             { data: 'DESCRIPTION' },
@@ -203,166 +206,12 @@ function initCommentsTable(data) {
         }
     });
 
-    // Add click event for work order links
-    $('#commentsTable').on('click', '.work-order-link', function (e) {
-        e.preventDefault();
-        const workOrderId = $(this).data('id');
-        const currentGroup = getCurrentGroup();
-
-        // First check if work order details endpoint exists by making a HEAD request
-        $.ajax({
-            url: `/api/work_orders/${workOrderId}/exists`,
-            type: 'HEAD',
-            success: function () {
-                // Work order details page exists, redirect to it
-                window.open(`/groups/${currentGroup}/work_orders/${workOrderId}`, '_blank');
-            },
-            error: function () {
-                // Work order details page doesn't exist, show a modal instead
-                showWorkOrderDetailsModal(workOrderId);
-            }
-        });
-    });
-
-    /**
-     * Show a modal with work order details
-     * @param {string|number} workOrderId - The work order ID to show details for
-     */
-    function showWorkOrderDetailsModal(workOrderId) {
-        // Check if modal exists, create it if not
-        let modal = $('#workOrderDetailsModal');
-        if (modal.length === 0) {
-            // Create modal HTML
-            const modalHtml = `
-            <div class="modal fade" id="workOrderDetailsModal" tabindex="-1" aria-labelledby="workOrderDetailsModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title" id="workOrderDetailsModalLabel">Work Order Details</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="workOrderDetailsContent" class="loading">
-                                Loading work order details...
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-            $('body').append(modalHtml);
-            modal = $('#workOrderDetailsModal');
+    // Handle window resize
+    $(window).on('resize', function () {
+        if (table && typeof table.columns === 'function') {
+            table.columns.adjust();
         }
-
-        // Update modal title and show it
-        $('#workOrderDetailsModalLabel').text(`Work Order Details: ${workOrderId}`);
-        $('#workOrderDetailsContent').addClass('loading').text('Loading work order details...');
-
-        // Use Bootstrap to show the modal
-        const modalInstance = new bootstrap.Modal(modal);
-        modalInstance.show();
-
-        // Fetch work order details
-        $.ajax({
-            url: `/api/work_orders/${workOrderId}`,
-            type: 'GET',
-            success: function (data) {
-                // Format and display work order details
-                let detailsHtml = '<div class="work-order-details">';
-
-                if (data.success) {
-                    const wo = data.work_order;
-                    detailsHtml += `
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6>Work Order ID</h6>
-                            <p>${wo.WORKORDERID || workOrderId}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Status</h6>
-                            <p>${wo.STATUS || 'Unknown'}</p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6>Description</h6>
-                            <p>${wo.DESCRIPTION || 'No description available'}</p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6>Created Date</h6>
-                            <p>${formatDate(wo.INITDATE) || 'Unknown'}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Finish Date</h6>
-                            <p>${formatDate(wo.ACTUALFINISHDATE) || 'Not completed'}</p>
-                        </div>
-                    </div>
-                `;
-
-                    // Add comments section if available
-                    if (wo.comments && wo.comments.length > 0) {
-                        detailsHtml += '<h6 class="mt-3">Comments</h6>';
-                        detailsHtml += '<div class="comments-list">';
-
-                        wo.comments.forEach(comment => {
-                            detailsHtml += `
-                            <div class="comment-item mb-2 p-2 border-bottom">
-                                <div class="comment-header">
-                                    <strong>${comment.AUTHOR_NAME || 'Unknown'}</strong> - 
-                                    <span class="text-muted">${formatDate(comment.DATECREATED)}</span>
-                                </div>
-                                <div class="comment-body">
-                                    ${comment.COMMENTS || 'No comment text'}
-                                </div>
-                            </div>
-                        `;
-                        });
-
-                        detailsHtml += '</div>';
-                    } else {
-                        detailsHtml += '<p class="mt-3">No comments available for this work order.</p>';
-                    }
-                } else {
-                    detailsHtml += `
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Could not retrieve work order details. The work order may not exist or you might not have permissions to view it.
-                    </div>
-                `;
-                }
-
-                detailsHtml += '</div>';
-
-                // Update modal content
-                $('#workOrderDetailsContent').removeClass('loading').html(detailsHtml);
-            },
-            error: function (xhr, status, error) {
-                // Handle error
-                let errorMessage = 'Error retrieving work order details';
-
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.error) {
-                        errorMessage += ': ' + response.error;
-                    }
-                } catch (e) {
-                    errorMessage += ': ' + error;
-                }
-
-                $('#workOrderDetailsContent').removeClass('loading').html(`
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    ${errorMessage}
-                </div>
-            `);
-            }
-        });
-    }
+    });
 }
 
 /**
@@ -449,44 +298,55 @@ function showError(message) {
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-danger alert-dismissible fade show';
     alertDiv.setAttribute('role', 'alert');
+    /**
+ * Show an error message
+ * @param {string} message - The error message to display
+ */
+    function showError(message) {
+        console.error(message);
 
-    // Add alert content
-    alertDiv.innerHTML = `
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.setAttribute('role', 'alert');
+
+        // Add alert content
+        alertDiv.innerHTML = `
         <i class="fas fa-exclamation-triangle me-2"></i>
         <strong>Error:</strong> ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
 
-    // Find a place to add the alert
-    const container = document.querySelector('.container');
-    if (container) {
-        // Add to beginning of container
-        container.insertBefore(alertDiv, container.firstChild);
-    } else {
-        // If no container found, add to body
-        document.body.insertBefore(alertDiv, document.body.firstChild);
+        // Find a place to add the alert
+        const container = document.querySelector('.container');
+        if (container) {
+            // Add to beginning of container
+            container.insertBefore(alertDiv, container.firstChild);
+        } else {
+            // If no container found, add to body
+            document.body.insertBefore(alertDiv, document.body.firstChild);
+        }
+
+        // Auto-close after 5 seconds
+        setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 150);
+        }, 5000);
     }
 
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-        alertDiv.classList.remove('show');
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.parentNode.removeChild(alertDiv);
-            }
-        }, 150);
-    }, 5000);
-}
-
-/**
- * Add CSS styles needed for this report
- */
-function addStyles() {
-    // Create style element if it doesn't exist
-    if (!document.getElementById('work-order-comments-styles')) {
-        const style = document.createElement('style');
-        style.id = 'work-order-comments-styles';
-        style.textContent = `
+    /**
+     * Add CSS styles needed for this report
+     */
+    function addStyles() {
+        // Create style element if it doesn't exist
+        if (!document.getElementById('work-order-comments-styles')) {
+            const style = document.createElement('style');
+            style.id = 'work-order-comments-styles';
+            style.textContent = `
             .highlight {
                 background-color: rgba(255, 193, 7, 0.3);
                 padding: 0 2px;
@@ -504,9 +364,10 @@ function addStyles() {
                 text-decoration: underline;
             }
         `;
-        document.head.appendChild(style);
+            document.head.appendChild(style);
+        }
     }
-}
 
-// Add the styles when the document is ready
-$(document).ready(addStyles);
+    // Add the styles when the document is ready
+    $(document).ready(addStyles);
+}
