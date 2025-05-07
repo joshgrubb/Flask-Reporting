@@ -6,7 +6,7 @@ These routes can be registered with multiple group blueprints.
 """
 
 import logging
-from flask import render_template, request, jsonify, abort
+from flask import render_template, request, jsonify, abort, redirect, url_for
 
 from app.core.database import execute_query
 from app.shared.work_order_details.queries import (
@@ -34,6 +34,32 @@ def register_work_order_details_routes(bp, url_prefix="/work_orders"):
     """
     logger.info("Registering work order details routes with blueprint: %s", bp.name)
 
+    @bp.route(f"{url_prefix}/")
+    def work_order_index():
+        """
+        Main work order route.
+
+        When accessed without a work order ID, it displays the default view
+        with a search form.
+
+        Returns:
+            str: Rendered HTML template.
+        """
+        try:
+            return render_template(
+                "shared/work_order_details/index.html",
+                title="Work Orders",
+                work_order=None,  # No work order details
+                comments=[],  # Empty comments
+                labor=[],  # Empty labor
+                materials=[],  # Empty materials
+                current_group=bp.name,
+                initial_load=True,  # Flag to indicate this is the initial page load
+            )
+        except Exception as e:
+            logger.error("Error rendering work order index: %s", str(e))
+            return render_template("error.html", error=str(e))
+
     @bp.route(f"{url_prefix}/<work_order_id>")
     def work_order_details(work_order_id):
         """
@@ -56,7 +82,18 @@ def register_work_order_details_routes(bp, url_prefix="/work_orders"):
 
             if not details:
                 logger.warning("Work order not found: %s", work_order_id)
-                abort(404, description=f"Work order {work_order_id} not found")
+                # This is a search that returned no results, not an initial page load
+                return render_template(
+                    "shared/work_order_details/index.html",
+                    title="Work Orders",
+                    work_order=None,
+                    comments=[],
+                    labor=[],
+                    materials=[],
+                    current_group=bp.name,
+                    initial_load=False,  # Not an initial load
+                    error_message=f"Work order {work_order_id} not found",
+                )
 
             # Get work order comments
             comments_query, comments_params, comments_db_key = get_work_order_comments(
@@ -73,10 +110,12 @@ def register_work_order_details_routes(bp, url_prefix="/work_orders"):
             labor = execute_query(labor_query, labor_params, db_key=labor_db_key)
 
             # Get work order materials
-            materials_query, materials_params, materials_db_key = get_work_order_materials(
-                work_order_id
+            materials_query, materials_params, materials_db_key = (
+                get_work_order_materials(work_order_id)
             )
-            materials = execute_query(materials_query, materials_params, db_key=materials_db_key)
+            materials = execute_query(
+                materials_query, materials_params, db_key=materials_db_key
+            )
 
             # Format author names for comments
             for comment in comments:
@@ -110,27 +149,9 @@ def register_work_order_details_routes(bp, url_prefix="/work_orders"):
                 labor=labor,
                 materials=materials,
                 current_group=bp.name,
+                initial_load=False,  # Not an initial load
             )
 
         except Exception as e:
             logger.error("Error retrieving work order details: %s", str(e))
-            return render_template("error.html", error=str(e))
-
-    # Define a search route for work orders
-    @bp.route(f"{url_prefix}/search")
-    def work_order_search():
-        """
-        Search for work orders based on criteria.
-
-        Returns:
-            str: Rendered HTML template with search form.
-        """
-        try:
-            return render_template(
-                "shared/work_order_details/search.html",
-                title="Search Work Orders",
-                current_group=bp.name,
-            )
-        except Exception as e:
-            logger.error("Error rendering work order search page: %s", str(e))
             return render_template("error.html", error=str(e))

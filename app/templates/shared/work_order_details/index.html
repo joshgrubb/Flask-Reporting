@@ -13,24 +13,39 @@
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/groups/">Groups</a></li>
                 <li class="breadcrumb-item"><a href="/groups/{{ current_group }}/">{{ current_group|title }}</a></li>
-                <li class="breadcrumb-item active">Work Order {{ work_order.WORKORDERID }}</li>
+                <li class="breadcrumb-item active">{{ title }}</li>
             </ol>
         </nav>
 
-        <!-- Quick Search Box -->
-        <div class="card mb-3">
-            <div class="card-body p-2">
-                <form id="quickSearchForm" class="d-flex align-items-center">
-                    <label for="quickWorkOrderId" class="me-2 mb-0"><strong>Quick Search:</strong></label>
-                    <input type="text" class="form-control form-control-sm me-2" id="quickWorkOrderId"
-                        placeholder="Enter Work Order ID" style="max-width: 200px;">
-                    <button type="submit" class="btn btn-sm btn-primary">
-                        <i class="fas fa-search"></i> Find
-                    </button>
+        <!-- Search Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-search"></i> Work Order Search</h5>
+            </div>
+            <div class="card-body">
+                <form id="workOrderSearchForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="workOrderId" name="work_order_id"
+                            placeholder="Enter Work Order ID" required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Find Work Order
+                        </button>
+                    </div>
+                    <small class="form-text text-muted mt-2">
+                        Enter a work order ID to view its detailed information.
+                    </small>
                 </form>
+
+                {% if error_message and not initial_load %}
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ error_message }}
+                </div>
+                {% endif %}
             </div>
         </div>
 
+        {% if work_order %}
         <h1>
             <i class="fas fa-clipboard-list"></i> Work Order {{ work_order.WORKORDERID }}
             <span
@@ -39,10 +54,46 @@
             </span>
         </h1>
         <p class="lead">{{ work_order.DESCRIPTION }}</p>
+        {% else %}
+        <h1><i class="fas fa-clipboard-list"></i> Work Orders</h1>
+        <p class="lead">Search for and view work order details.</p>
+        {% endif %}
     </div>
 </div>
 
-<!-- Work Order Details Card - Keep existing content -->
+{% if not work_order %}
+<!-- Information Card (shown when no work order is selected) -->
+<div class="row">
+    <div class="col">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> About Work Orders</h5>
+            </div>
+            <div class="card-body">
+                <p>Using this tool, you can access detailed information about work orders including:</p>
+                <ul>
+                    <li>General work order information and status</li>
+                    <li>Comments added to the work order</li>
+                    <li>Labor entries and costs</li>
+                    <li>Materials used and their costs</li>
+                </ul>
+                <p>Enter a work order ID in the search box above to view its details.</p>
+
+                <div class="mt-3">
+                    <strong>Other useful reports:</strong>
+                    <ul>
+                        <li><a href="/groups/{{ current_group }}/work_order_comments/"><i class="fas fa-comments"></i>
+                                Work Order Comments Search</a></li>
+                        <li><a href="/groups/{{ current_group }}/labor_requests/"><i class="fas fa-users"></i> Labor
+                                Requests</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Work Order Details Card -->
 <div class="row mb-4">
     <div class="col">
         <div class="card">
@@ -259,7 +310,8 @@
                                     <tr>
                                         <td>{{ entry.LABORNAME }}</td>
                                         <td>{{ entry.HOURS }}</td>
-                                        <td>${{ entry.COST|float|round(2) if entry.COST else '0.00' }}</td>
+                                        <td>${{ entry.REGULARCOST|float|round(2) if entry.REGULARCOST else '0.00' }}
+                                        </td>
                                         <td>{{ entry.ACTUALSTARTDATE }}</td>
                                         <td>{{ entry.ACTUALFINISHDATE }}</td>
                                     </tr>
@@ -300,13 +352,13 @@
                                     {% for item in materials %}
                                     <tr>
                                         <td>{{ item.MATERIALUID }}</td>
-                                        <td>{{ item.DESCRIPTION }}</td>                                        
+                                        <td>{{ item.DESCRIPTION }}</td>
                                         <td>{{ item.UNITSREQUIRED }}</td>
                                         <td>{{ item.UNITOFMEASURE }}</td>
                                         <td>${{ item.UNITCOST|float|round(2) if item.UNITCOST else '0.00' }}</td>
                                         <td>${{ item.TOTALCOST|float|round(2) if item.TOTALCOST else '0.00' }}</td>
                                         <td>{{ item.TRANSDATE }}</td>
-                                        <td>{{ item.DETAIL or '' }}</td>
+                                        <td>{{ item.ACTNUM or '' }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -324,15 +376,16 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
     $(document).ready(function () {
-        // Handle quick search form submission
-        $('#quickSearchForm').on('submit', function (e) {
+        // Handle search form submission
+        $('#workOrderSearchForm').on('submit', function (e) {
             e.preventDefault();
-            const workOrderId = $('#quickWorkOrderId').val().trim();
+            const workOrderId = $('#workOrderId').val().trim();
 
             if (workOrderId) {
                 // Redirect to the work order details page

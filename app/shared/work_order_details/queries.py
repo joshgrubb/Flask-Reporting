@@ -161,7 +161,7 @@ def get_work_order_materials(work_order_id):
         ML.UNITOFMEASURE,
         M.UNITSREQUIRED,
         M.TRANSDATE,
-        ML.DETAIL,
+        M.ACCTNUM,
         (ML.UNITCOST * M.UNITSREQUIRED) AS TOTALCOST
     FROM CW.[azteca].MATERIALCOSTACT AS M
     LEFT JOIN CW.[azteca].MATERIALLEAF AS ML ON M.MATERIALUID = ML.MATERIALUID
