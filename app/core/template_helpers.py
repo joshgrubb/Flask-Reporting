@@ -78,3 +78,27 @@ def register_template_helpers(app):
         app: The Flask application.
     """
     app.jinja_env.globals.update(include_cdn=include_cdn_resources)
+
+
+def get_blueprint_group_id(blueprint):
+    """
+    Extract the group_id from a blueprint.
+
+    Args:
+        blueprint: Flask Blueprint object or string
+
+    Returns:
+        str: The extracted group_id
+    """
+    if isinstance(blueprint, str):
+        return blueprint
+
+    # Check if it has report_metadata
+    if (
+        hasattr(blueprint, "report_metadata")
+        and "group_id" in blueprint.report_metadata
+    ):
+        return blueprint.report_metadata["group_id"]
+
+    # Otherwise use the blueprint name
+    return blueprint.name

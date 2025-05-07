@@ -8,10 +8,11 @@
     <!-- Quick Access Component -->
     {% include "components/quick_access.html" %}
 
-    <div class="row mt-4">
-        {% set current_group_id = request.blueprint.split('.')[0] %}
-        {% set group_reports = get_group_reports(current_group_id) %}
+    <!-- This is the key fix -->
+    {% set current_group_id = get_blueprint_group_id(request.blueprint) %}
+    {% set group_reports = get_group_reports(current_group_id) %}
 
+    <div class="row mt-4">
         {% for report in group_reports %}
         {% if report.enabled %}
         <div class="col-md-4 col-sm-6 mb-4">

@@ -68,7 +68,9 @@ def create_app(config_name=None):
 
     app.register_blueprint(test_bp)
 
-    # Initialize report registry - add this line
+    # Initialize report registry AFTER registering blueprints
+    from app.core.report_registry import initialize_report_registry
+
     initialize_report_registry(app)
 
     @app.route("/")
