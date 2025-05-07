@@ -56,22 +56,26 @@
     </div>
 
     <!-- Navigation -->
-    <!-- Simplified Navigation with Top-Level Groups Only -->
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark sticky-top" aria-label="Main navigation">
             <div class="container-fluid">
+                <!-- Brand - keep outside collapse for mobile view -->
                 <a class="navbar-brand d-flex align-items-center" href="/">
                     <img src="{{ url_for('static', filename='img/DataForgeHammer.ico') }}" alt="Logo" width="30"
                         height="30" class="me-2">
                     <span>Clayton DataForge</span>
                 </a>
+
+                <!-- Mobile toggle button -->
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
+                <!-- Collapsible content -->
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <!-- Update app/templates/base.html navbar section -->
-                    <ul class="navbar-nav">
+                    <!-- Main navigation links -->
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
                             <a class="nav-link" href="/" data-bs-toggle="tooltip" data-bs-placement="bottom"
                                 title="Home">
@@ -94,8 +98,7 @@
                                 {% endfor %}
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{{ group.url }}"><i class="fas fa-th-large"></i> All {{
-                                    group.name }}
-                                    Reports</a>
+                                    group.name }} Reports</a>
                             </div>
                         </li>
                         {% endif %}
@@ -109,8 +112,8 @@
                         </li>
                     </ul>
 
-                    <!-- Search Box -->
-                    <form class="d-flex ms-auto me-3" id="reportSearchForm">
+                    <!-- Search form - responsive layout -->
+                    <form class="d-flex mx-lg-2 mb-3 mb-lg-0" id="reportSearchForm">
                         <div class="input-group">
                             <input class="form-control" type="search" id="navbarSearch" placeholder="Search reports..."
                                 aria-label="Search">
@@ -121,8 +124,8 @@
                     </form>
 
                     <!-- Right-side utilities -->
-                    <ul class="navbar-nav">
-                        <li class="nav-item dropdown">
+                    <ul class="navbar-nav flex-row flex-lg-row justify-content-end">
+                        <li class="nav-item dropdown mx-1">
                             <a class="nav-link" href="#" id="recentReportsDropdown" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false" title="Recent Reports">
                                 <i class="fas fa-history"></i>
@@ -136,13 +139,13 @@
                                 </div>
                             </div>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item mx-1">
                             <a class="nav-link" href="#" id="refresh-page" data-bs-toggle="tooltip"
                                 data-bs-placement="bottom" title="Refresh page">
                                 <i class="fas fa-sync-alt"></i>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item mx-1">
                             <a class="nav-link" href="#" id="toggle-theme" data-bs-toggle="tooltip"
                                 data-bs-placement="bottom" title="Toggle dark mode">
                                 <i class="fas fa-moon"></i>
