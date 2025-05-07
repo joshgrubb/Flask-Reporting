@@ -14,5 +14,15 @@ bp = Blueprint(
     template_folder="../../../templates/groups/utilities_billing/new_customer_accounts",
 )
 
+# Add report metadata
+bp.report_metadata = {
+    "id": "new_customer_accounts",
+    "name": "New Customer Accounts",
+    "description": "Report showing new customer account information",
+    "url": "/groups/utilities_billing/new_customer_accounts/",
+    "group_id": "utilities_billing",
+    "icon": "fas fa-user-plus",
+}
+
 # Import routes at the bottom to avoid circular imports
 from app.groups.utilities_billing.new_customer_accounts import routes  # noqa

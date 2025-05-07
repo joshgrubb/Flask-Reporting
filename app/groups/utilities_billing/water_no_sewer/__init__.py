@@ -14,5 +14,15 @@ bp = Blueprint(
     template_folder="../../../templates/groups/utilities_billing/water_no_sewer",
 )
 
+# Add report metadata
+bp.report_metadata = {
+    "id": "water_no_sewer",
+    "name": "Water No Sewer",
+    "description": "View accounts with water but no sewer service",
+    "url": "/groups/utilities_billing/water_no_sewer/",
+    "group_id": "utilities_billing",
+    "icon": "fa-solid fa-glass-water",
+}
+
 # Import routes at the bottom to avoid circular imports
 from app.groups.utilities_billing.water_no_sewer import routes  # noqa

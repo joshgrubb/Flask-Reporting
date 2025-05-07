@@ -1,4 +1,3 @@
-# app/shared/work_order_details/__init__.py
 """
 Work Order Details Module.
 
@@ -7,7 +6,6 @@ that can be accessed from multiple group blueprints.
 """
 
 # Import the route registration function so it can be imported directly
-# from this module
 from app.shared.work_order_details.routes import register_work_order_details_routes
 
 # Export the route registration function

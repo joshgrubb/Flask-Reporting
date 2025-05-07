@@ -70,6 +70,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
+                    <!-- Update app/templates/base.html navbar section -->
                     <ul class="navbar-nav">
                         <li class="nav-item">
                             <a class="nav-link" href="/" data-bs-toggle="tooltip" data-bs-placement="bottom"
@@ -78,7 +79,8 @@
                             </a>
                         </li>
 
-                        {% for group in nav_groups %}
+                        {% for group in get_all_groups() %}
+                        {% if group.enabled %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="{{ group.url }}" id="{{ group.id }}Dropdown"
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -86,13 +88,17 @@
                             </a>
                             <div class="dropdown-menu" aria-labelledby="{{ group.id }}Dropdown">
                                 {% for report in group.reports %}
+                                {% if report.enabled %}
                                 <a class="dropdown-item" href="{{ report.url }}">{{ report.name }}</a>
+                                {% endif %}
                                 {% endfor %}
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{{ group.url }}"><i class="fas fa-th-large"></i> All {{
-                                    group.name }} Reports</a>
+                                    group.name }}
+                                    Reports</a>
                             </div>
                         </li>
+                        {% endif %}
                         {% endfor %}
 
                         <li class="nav-item">

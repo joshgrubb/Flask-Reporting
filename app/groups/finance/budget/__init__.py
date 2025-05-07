@@ -15,5 +15,15 @@ bp = Blueprint(
     template_folder="../../../templates/groups/finance/budget",
 )
 
+# Add report metadata
+bp.report_metadata = {
+    "id": "budget",
+    "name": "Budget Dashboard",
+    "description": "Trends and analysis Budget",
+    "url": "/groups/finance/budget/",
+    "group_id": "finance",
+    "icon": "fa-solid fa-file-invoice-dollar",
+}
+
 # Import routes at the bottom to avoid circular imports
 from app.groups.finance.budget import routes  # noqa

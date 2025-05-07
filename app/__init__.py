@@ -1,3 +1,4 @@
+# app/__init__.py (update this file)
 """
 Application factory module.
 
@@ -14,6 +15,9 @@ from app.core.database import close_db_connections
 
 # Import template helpers
 from app.core.template_helpers import register_template_helpers
+
+# Import report registry initialization
+from app.core.report_registry import initialize_report_registry
 
 
 def create_app(config_name=None):
@@ -63,6 +67,9 @@ def create_app(config_name=None):
     from app.shared.labor_requests import test_bp
 
     app.register_blueprint(test_bp)
+
+    # Initialize report registry - add this line
+    initialize_report_registry(app)
 
     @app.route("/")
     def index():

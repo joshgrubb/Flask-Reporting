@@ -7,7 +7,7 @@ to all templates in the application.
 
 import logging
 from flask import Blueprint
-from app.core.navigation import get_navigation_data
+from app.core.report_registry import get_all_groups, get_all_reports
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -23,14 +23,9 @@ def register_context_processors(app):
     try:
 
         @app.context_processor
-        def inject_navigation_data():
-            """
-            Make navigation data available to all templates.
-
-            Returns:
-                dict: Dictionary containing navigation data.
-            """
-            return {"nav_groups": get_navigation_data()}
+        def inject_reports_data():
+            """Inject reports data into all templates."""
+            return {"nav_groups": get_all_groups(), "all_reports": get_all_reports()}
 
         logger.info("Registered template context processors")
 

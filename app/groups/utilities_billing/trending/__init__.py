@@ -15,5 +15,15 @@ bp = Blueprint(
     template_folder="../../../templates/groups/utilities_billing/trending",
 )
 
+# Add report metadata
+bp.report_metadata = {
+    "id": "utility_dashboard",
+    "name": "Utility Billing Dashboard",
+    "description": "Overview of utility billing metrics and KPIs",
+    "url": "/groups/utilities_billing/trending/",
+    "group_id": "utilities_billing",
+    "icon": "fa-solid fa-chart-column",
+}
+
 # Import routes at the bottom to avoid circular imports
 from app.groups.utilities_billing.trending import routes  # noqa

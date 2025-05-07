@@ -1,4 +1,4 @@
-<!-- app/templates/groups/{group_name}/dashboard.html -->
+<!-- app/templates/groups/dashboard_base.html -->
 {% extends "base.html" %}
 
 {% block content %}
@@ -9,7 +9,9 @@
     {% include "components/quick_access.html" %}
 
     <div class="row mt-4">
-        {% set group_reports = get_group_reports(request.blueprint) %}
+        {% set current_group_id = request.blueprint.split('.')[0] %}
+        {% set group_reports = get_group_reports(current_group_id) %}
+
         {% for report in group_reports %}
         {% if report.enabled %}
         <div class="col-md-4 col-sm-6 mb-4">

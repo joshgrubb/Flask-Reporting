@@ -1,4 +1,3 @@
-# app/groups/warehouse/stock_by_storeroom/__init__.py
 """
 Stock By Storeroom Report Blueprint.
 
@@ -15,6 +14,16 @@ bp = Blueprint(
     url_prefix="/stock_by_storeroom",
     template_folder="../../../templates/groups/warehouse/stock_by_storeroom",
 )
+
+# Add report metadata
+bp.report_metadata = {
+    "id": "stock_by_storeroom",
+    "name": "Stock By Storeroom",
+    "description": "View inventory items by storeroom location with min/max quantity analysis",
+    "url": "/groups/warehouse/stock_by_storeroom/",
+    "group_id": "warehouse",
+    "icon": "fas fa-warehouse",
+}
 
 # Import routes at the bottom to avoid circular imports
 from app.groups.warehouse.stock_by_storeroom import routes  # noqa

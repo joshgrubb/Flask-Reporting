@@ -15,5 +15,15 @@ bp = Blueprint(
     template_folder="../../../templates/groups/public_works/solid_waste",
 )
 
+# Add report metadata
+bp.report_metadata = {
+    "id": "solid_waste",
+    "name": "Solid Waste",
+    "description": "Solid Waste Billing Data for Town Provided Waste Pickup",
+    "url": "/groups/public_works/solid_waste/",
+    "group_id": "public_works",
+    "icon": "fa-solid fa-trash",
+}
+
 # Import routes at the bottom to avoid circular imports
 from app.groups.public_works.solid_waste import routes  # noqa
