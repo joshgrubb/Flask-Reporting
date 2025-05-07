@@ -1112,7 +1112,7 @@ footer {
 #searchButton:active {
     transform: scale(0.95);
 }
-/* Clickable card styling */
+/* Enhanced clickable card styling */
 .card-link {
     display: block;
     color: inherit;
@@ -1127,35 +1127,34 @@ footer {
 
 .card-link .hover-effect {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid transparent;
 }
 
 .card-link:hover .hover-effect,
 .card-link:focus .hover-effect {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
 }
 
-/* Make the button look like a button but not act like one since the whole card is clickable */
-.disabled-appearance {
-    pointer-events: none;
+/* Add hover state for the footer text */
+.card-link .card-footer .text-primary {
+    transition: padding-right 0.3s ease;
 }
 
-/* Add indicator for clickable card */
-.card-link .card-footer {
-    position: relative;
+.card-link:hover .card-footer .text-primary,
+.card-link:focus .card-footer .text-primary {
+    padding-right: 5px;
 }
 
-.card-link .card-footer:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background-color: var(--primary-color);
-    transition: width 0.3s ease;
+/* Cursor indicator */
+.card-link .card {
+    cursor: pointer;
 }
 
-.card-link:hover .card-footer:after {
-    width: 100%;
+/* Dark mode adjustments */
+.dark-mode .card-link:hover .hover-effect,
+.dark-mode .card-link:focus .hover-effect {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
 }

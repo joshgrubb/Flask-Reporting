@@ -20,27 +20,29 @@
         {% for group in groups %}
         {% if group.enabled %}
         <div class="col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 card-hover">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="icon-container me-3">
-                            <i class="{{ group.icon }} fa-3x text-primary"></i>
+            <a href="{{ group.url }}" class="text-decoration-none card-link">
+                <div class="card h-100 hover-effect">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="icon-container me-3">
+                                <i class="{{ group.icon }} fa-3x text-primary"></i>
+                            </div>
+                            <h4 class="card-title mb-0">{{ group.name }}</h4>
                         </div>
-                        <h4 class="card-title mb-0">{{ group.name }}</h4>
-                    </div>
-                    <p class="card-text">{{ group.description }}</p>
+                        <p class="card-text">{{ group.description }}</p>
 
-                    <!-- Report count badge -->
-                    <div class="mb-3">
-                        <span class="badge bg-primary">
-                            {{ group.reports|selectattr('enabled')|list|length }} Reports
-                        </span>
+                        <!-- Report count badge -->
+                        <div class="mb-3">
+                            <span class="badge bg-primary">
+                                {{ group.reports|selectattr('enabled')|list|length }} Reports
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 text-end">
+                        <span class="text-primary">View Group <i class="fas fa-arrow-right"></i></span>
                     </div>
                 </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="{{ group.url }}" class="btn btn-primary">View Reports</a>
-                </div>
-            </div>
+            </a>
         </div>
         {% endif %}
         {% endfor %}
