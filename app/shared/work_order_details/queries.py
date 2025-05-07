@@ -139,3 +139,41 @@ def get_work_order_labor(work_order_id):
     logger.info("Generated work order labor query for work order ID: %s", work_order_id)
 
     return query, tuple(params), "cw"
+
+
+def get_work_order_materials(work_order_id):
+    """
+    Get material usage and costs for a specific work order.
+
+    Args:
+        work_order_id (str): The ID of the work order to retrieve materials for.
+
+    Returns:
+        tuple: (SQL query string, query parameters, database key)
+    """
+    # Build the query for work order materials
+    query = """
+    SELECT
+        M.WORKORDERID,
+        M.DESCRIPTION,
+        M.MATERIALUID,
+        ML.UNITCOST,
+        ML.UNITOFMEASURE,
+        M.UNITSREQUIRED,
+        M.TRANSDATE,
+        ML.DETAIL,
+        (ML.UNITCOST * M.UNITSREQUIRED) AS TOTALCOST
+    FROM CW.[azteca].MATERIALCOSTACT AS M
+    LEFT JOIN CW.[azteca].MATERIALLEAF AS ML ON M.MATERIALUID = ML.MATERIALUID
+    WHERE M.WORKORDERID = ?
+    ORDER BY M.TRANSDATE DESC
+    """
+
+    # Parameters
+    params = [work_order_id]
+
+    logger.info(
+        "Generated work order materials query for work order ID: %s", work_order_id
+    )
+
+    return query, tuple(params), "cw"

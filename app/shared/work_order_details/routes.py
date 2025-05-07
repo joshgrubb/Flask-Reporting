@@ -13,6 +13,7 @@ from app.shared.work_order_details.queries import (
     get_work_order_details,
     get_work_order_comments,
     get_work_order_labor,
+    get_work_order_materials,
 )
 
 # Configure logger
@@ -71,6 +72,12 @@ def register_work_order_details_routes(bp, url_prefix="/work_orders"):
             )
             labor = execute_query(labor_query, labor_params, db_key=labor_db_key)
 
+            # Get work order materials
+            materials_query, materials_params, materials_db_key = get_work_order_materials(
+                work_order_id
+            )
+            materials = execute_query(materials_query, materials_params, db_key=materials_db_key)
+
             # Format author names for comments
             for comment in comments:
                 if comment.get("FIRSTNAME") and comment.get("LASTNAME"):
@@ -101,6 +108,7 @@ def register_work_order_details_routes(bp, url_prefix="/work_orders"):
                 work_order=details,
                 comments=comments,
                 labor=labor,
+                materials=materials,
                 current_group=bp.name,
             )
 
