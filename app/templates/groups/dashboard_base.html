@@ -27,23 +27,26 @@
 
         {% set group_reports = get_group_reports(current_group_id) %}
 
+        <!-- Modified HTML structure for clickable report cards -->
         {% for report in group_reports %}
         {% if report.enabled %}
         <div class="col-md-4 col-sm-6 mb-4 report-tile">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="icon-container me-3">
-                            <i class="{{ report.icon }} fa-2x text-primary"></i>
+            <a href="{{ report.url }}" class="text-decoration-none card-link">
+                <div class="card h-100 hover-effect">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="icon-container me-3">
+                                <i class="{{ report.icon }} fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="card-title mb-0">{{ report.name }}</h5>
                         </div>
-                        <h5 class="card-title mb-0">{{ report.name }}</h5>
+                        <p class="card-text">{{ report.description }}</p>
                     </div>
-                    <p class="card-text">{{ report.description }}</p>
+                    <div class="card-footer bg-transparent border-0">
+                        <span class="btn btn-primary btn-sm disabled-appearance">View Report</span>
+                    </div>
                 </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="{{ report.url }}" class="btn btn-primary btn-sm">View Report</a>
-                </div>
-            </div>
+            </a>
         </div>
         {% endif %}
         {% endfor %}
