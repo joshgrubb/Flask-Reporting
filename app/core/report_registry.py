@@ -48,7 +48,14 @@ def register_group(group_id, name, url, description=None, icon=None, enabled=Tru
 
 
 def register_report(
-    report_id, name, url, group_id, description=None, icon=None, enabled=True
+    report_id,
+    name,
+    url,
+    group_id,
+    description=None,
+    icon=None,
+    enabled=True,
+    visible_in=None,
 ):
     """
     Register a report in the registry.
@@ -61,6 +68,8 @@ def register_report(
         description (str, optional): Brief description of the report
         icon (str, optional): Font Awesome icon class for the report
         enabled (bool, optional): Whether the report is enabled
+        visible_in (list, optional): List of group IDs where this report should be visible.
+                                    If None, visible in parent group only.
 
     Returns:
         dict: The registered report data
@@ -78,6 +87,10 @@ def register_report(
             url=f"/groups/{group_id}/",
         )
 
+    # Set visible_in to just the parent group if not specified
+    if visible_in is None:
+        visible_in = [group_id]
+
     report_data = {
         "id": report_id,
         "name": name,
@@ -86,6 +99,7 @@ def register_report(
         "group_id": group_id,
         "icon": icon or "fas fa-file-alt",
         "enabled": enabled,
+        "visible_in": visible_in,
     }
 
     # Add to reports registry
@@ -144,7 +158,20 @@ def get_group_reports(group_id):
     Returns:
         list: List of report data dictionaries for the group
     """
-    return _reports_registry.get(group_id, [])
+    all_reports = []
+
+    # Get reports directly registered to this group
+    group_reports = _reports_registry.get(group_id, [])
+
+    # Filter reports to only those that should be visible in this group
+    for reports in _reports_registry.values():
+        for report in reports:
+            if "visible_in" in report and group_id in report["visible_in"]:
+                # Avoid duplicates
+                if not any(r["id"] == report["id"] for r in all_reports):
+                    all_reports.append(report)
+
+    return all_reports
 
 
 def extract_report_metadata(blueprint):

@@ -63,11 +63,6 @@ def create_app(config_name=None):
 
     register_context_processors(app)
 
-    # Register test blueprint
-    from app.shared.labor_requests import test_bp
-
-    app.register_blueprint(test_bp)
-
     # Initialize report registry AFTER registering blueprints
     from app.core.report_registry import initialize_report_registry
 
