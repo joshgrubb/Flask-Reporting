@@ -10,39 +10,7 @@
         </div>
         <div class="card-body">
             <div class="row" id="quickAccessGrid">
-                <!-- Most used reports will be automatically populated here based on usage -->
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <a href="/groups/utilities_billing/new_customer_accounts/" class="text-decoration-none">
-                        <div class="quick-access-card p-3 text-center">
-                            <i class="fas fa-user-plus fa-2x mb-2"></i>
-                            <h6>New Customer Accounts</h6>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <a href="/groups/utilities_billing/credit_balance/" class="text-decoration-none">
-                        <div class="quick-access-card p-3 text-center">
-                            <i class="fas fa-dollar-sign fa-2x mb-2"></i>
-                            <h6>Credit Balance Report</h6>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <a href="/groups/warehouse/fifo_cost_wo/" class="text-decoration-none">
-                        <div class="quick-access-card p-3 text-center">
-                            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
-                            <h6>FIFO Cost by Account</h6>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-3">
-                    <a href="/groups/finance/budget/" class="text-decoration-none">
-                        <div class="quick-access-card p-3 text-center">
-                            <i class="fas fa-chart-line fa-2x mb-2"></i>
-                            <h6>Budget Dashboard</h6>
-                        </div>
-                    </a>
-                </div>
+                <!-- Most used reports will be automatically populated here -->
             </div>
         </div>
     </div>
@@ -125,34 +93,43 @@
     });
 
     /**
-     * Open the customize modal
+     * Open the customize modal with dynamically loaded reports
      */
     function openCustomizeModal() {
-        // Report data structure - should match the one in navbar.js
-        const allReports = [
-            { id: 'new_customer', title: "New Customer Accounts", url: "/groups/utilities_billing/new_customer_accounts/", icon: "fas fa-user-plus", group: "Utilities Billing" },
-            { id: 'amount_billed', title: "Amount Billed Search", url: "/groups/utilities_billing/amount_billed_search/", icon: "fas fa-search-dollar", group: "Utilities Billing" },
-            { id: 'moveouts', title: "No Occupant Moveouts", url: "/groups/utilities_billing/no_occupant_list_for_moveouts/", icon: "fas fa-building-circle-arrow-right", group: "Utilities Billing" },
-            { id: 'credit_balance', title: "Credit Balance", url: "/groups/utilities_billing/credit_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
-            { id: 'high_balance', title: "High Balance", url: "/groups/utilities_billing/high_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
-            { id: 'fifo_cost', title: "FIFO Cost by Account", url: "/groups/warehouse/fifo_cost_wo/", icon: "fas fa-clipboard-list", group: "Warehouse" },
-            { id: 'fifo_stock', title: "Inventory Cost Trends", url: "/groups/warehouse/fifo_stock/", icon: "fas fa-chart-line", group: "Warehouse" },
-            { id: 'stock_storeroom', title: "Stock By Storeroom", url: "/groups/warehouse/stock_by_storeroom/", icon: "fas fa-warehouse", group: "Warehouse" },
-            { id: 'budget', title: "Budget Dashboard", url: "/groups/finance/budget/", icon: "fas fa-chart-line", group: "Finance" },
-            { id: 'hydrant', title: "Hydrant History", url: "/groups/water_resources/hydrant_history/", icon: "fas fa-fire-hydrant", group: "Water Resources" },
-            // Add more reports as needed
-        ];
+        // Get all available reports from the report registry via template data
+        const allReports = {{ get_all_reports() | tojson | safe
+    }};
 
-        // Get currently selected reports
-        const selectedReports = JSON.parse(localStorage.getItem('quickAccessReports')) || [
-            'new_customer', 'credit_balance', 'fifo_cost', 'budget'
-        ];
+    // Get currently selected reports
+    const selectedReports = JSON.parse(localStorage.getItem('quickAccessReports')) || [
+        'new_customer_accounts', 'credit_balance', 'fifo_cost_wo', 'budget'
+    ];
 
-        // Populate report options
-        const reportOptionsContainer = document.getElementById('reportOptions');
-        reportOptionsContainer.innerHTML = '';
+    // Populate report options
+    const reportOptionsContainer = document.getElementById('reportOptions');
+    reportOptionsContainer.innerHTML = '';
 
-        allReports.forEach(report => {
+    // Sort reports by group for better organization
+    const reportsByGroup = {};
+
+    // Group reports by their group_id
+    allReports.forEach(report => {
+        if (!reportsByGroup[report.group_id]) {
+            reportsByGroup[report.group_id] = [];
+        }
+        reportsByGroup[report.group_id].push(report);
+    });
+
+    // Create a header and reports for each group
+    Object.keys(reportsByGroup).sort().forEach(groupId => {
+        // Create group header
+        const groupHeader = document.createElement('div');
+        groupHeader.classList.add('col-12', 'mb-2', 'mt-3');
+        groupHeader.innerHTML = `<h6 class="text-primary">${groupId.replace('_', ' ').toUpperCase()}</h6>`;
+        reportOptionsContainer.appendChild(groupHeader);
+
+        // Add reports for this group
+        reportsByGroup[groupId].forEach(report => {
             const reportOption = document.createElement('div');
             reportOption.classList.add('col-md-6');
 
@@ -165,14 +142,14 @@
             }
 
             reportCard.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="${report.icon} me-2"></i>
-                    <div>
-                        <div>${report.title}</div>
-                        <small class="text-muted">${report.group}</small>
+                    <div class="d-flex align-items-center">
+                        <i class="${report.icon} me-2"></i>
+                        <div>
+                            <div>${report.name}</div>
+                            <small class="text-muted">${report.group_id.replace('_', ' ').toUpperCase()}</small>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
             reportCard.addEventListener('click', function () {
                 // Toggle selection (limit to 4)
@@ -192,78 +169,68 @@
             reportOption.appendChild(reportCard);
             reportOptionsContainer.appendChild(reportOption);
         });
+    });
 
-        // Save button handler
-        const saveButton = document.getElementById('saveQuickAccess');
-        saveButton.addEventListener('click', function () {
-            const selectedOptions = document.querySelectorAll('.report-option.selected');
-            const selectedIds = Array.from(selectedOptions).map(option => option.dataset.reportId);
+    // Save button handler
+    const saveButton = document.getElementById('saveQuickAccess');
+    saveButton.addEventListener('click', function () {
+        const selectedOptions = document.querySelectorAll('.report-option.selected');
+        const selectedIds = Array.from(selectedOptions).map(option => option.dataset.reportId);
 
-            // Save to localStorage
-            localStorage.setItem('quickAccessReports', JSON.stringify(selectedIds));
+        // Save to localStorage
+        localStorage.setItem('quickAccessReports', JSON.stringify(selectedIds));
 
-            // Update the quick access panel
-            loadQuickAccessReports();
+        // Update the quick access panel
+        loadQuickAccessReports();
 
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('customizeModal'));
-            modal.hide();
-        });
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('customizeModal'));
+        modal.hide();
+    });
 
-        // Show the modal
-        const modal = new bootstrap.Modal(document.getElementById('customizeModal'));
-        modal.show();
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('customizeModal'));
+    modal.show();
     }
 
     /**
-     * Load and display quick access reports
+     * Load and display quick access reports from server data
      */
     function loadQuickAccessReports() {
-        // Report data structure - should match the one in navbar.js
-        const allReports = [
-            { id: 'new_customer', title: "New Customer Accounts", url: "/groups/utilities_billing/new_customer_accounts/", icon: "fas fa-user-plus", group: "Utilities Billing" },
-            { id: 'amount_billed', title: "Amount Billed Search", url: "/groups/utilities_billing/amount_billed_search/", icon: "fas fa-search-dollar", group: "Utilities Billing" },
-            { id: 'moveouts', title: "No Occupant Moveouts", url: "/groups/utilities_billing/no_occupant_list_for_moveouts/", icon: "fas fa-building-circle-arrow-right", group: "Utilities Billing" },
-            { id: 'credit_balance', title: "Credit Balance", url: "/groups/utilities_billing/credit_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
-            { id: 'high_balance', title: "High Balance", url: "/groups/utilities_billing/high_balance/", icon: "fas fa-dollar-sign", group: "Utilities Billing" },
-            { id: 'fifo_cost', title: "FIFO Cost by Account", url: "/groups/warehouse/fifo_cost_wo/", icon: "fas fa-clipboard-list", group: "Warehouse" },
-            { id: 'fifo_stock', title: "Inventory Cost Trends", url: "/groups/warehouse/fifo_stock/", icon: "fas fa-chart-line", group: "Warehouse" },
-            { id: 'stock_storeroom', title: "Stock By Storeroom", url: "/groups/warehouse/stock_by_storeroom/", icon: "fas fa-warehouse", group: "Warehouse" },
-            { id: 'budget', title: "Budget Dashboard", url: "/groups/finance/budget/", icon: "fas fa-chart-line", group: "Finance" },
-            { id: 'hydrant', title: "Hydrant History", url: "/groups/water_resources/hydrant_history/", icon: "fas fa-fire-hydrant", group: "Water Resources" },
-            // Add more reports as needed
-        ];
+        // Get all available reports from the report registry
+        const allReports = {{ get_all_reports() | tojson | safe
+    }};
 
-        // Get selected reports
-        const selectedReports = JSON.parse(localStorage.getItem('quickAccessReports')) || [
-            'new_customer', 'credit_balance', 'fifo_cost', 'budget'
-        ];
+    // Get selected reports
+    const selectedReportIds = JSON.parse(localStorage.getItem('quickAccessReports')) || [
+        'new_customer_accounts', 'credit_balance', 'fifo_cost_wo', 'budget'
+    ];
 
-        // Get quick access grid
-        const quickAccessGrid = document.getElementById('quickAccessGrid');
-        if (!quickAccessGrid) return;
+    // Get quick access grid
+    const quickAccessGrid = document.getElementById('quickAccessGrid');
+    if (!quickAccessGrid) return;
 
-        // Clear grid
-        quickAccessGrid.innerHTML = '';
+    // Clear grid
+    quickAccessGrid.innerHTML = '';
 
-        // Add selected reports
-        selectedReports.forEach(reportId => {
-            const report = allReports.find(r => r.id === reportId);
-            if (!report) return;
+    // Add selected reports
+    selectedReportIds.forEach(reportId => {
+        const report = allReports.find(r => r.id === reportId);
+        if (!report) return;
 
-            const reportCol = document.createElement('div');
-            reportCol.classList.add('col-md-3', 'col-sm-6', 'mb-3');
+        const reportCol = document.createElement('div');
+        reportCol.classList.add('col-md-3', 'col-sm-6', 'mb-3');
 
-            reportCol.innerHTML = `
+        reportCol.innerHTML = `
                 <a href="${report.url}" class="text-decoration-none">
                     <div class="quick-access-card p-3 text-center">
                         <i class="${report.icon} fa-2x mb-2"></i>
-                        <h6>${report.title}</h6>
+                        <h6>${report.name}</h6>
                     </div>
                 </a>
             `;
 
-            quickAccessGrid.appendChild(reportCol);
-        });
+        quickAccessGrid.appendChild(reportCol);
+    });
     }
 </script>
