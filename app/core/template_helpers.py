@@ -66,7 +66,7 @@ def include_cdn_resources(
         return Markup(html)
 
     except Exception as e:
-        logger.error(f"Error including CDN resources: {str(e)}")
+        logger.error("Error including CDN resources: %s", str(e))
         return Markup(f"<!-- Error loading CDN resources: {str(e)} -->")
 
 
@@ -77,28 +77,47 @@ def register_template_helpers(app):
     Args:
         app: The Flask application.
     """
-    app.jinja_env.globals.update(include_cdn=include_cdn_resources)
+    app.jinja_env.globals.update(
+        include_cdn=include_cdn_resources, get_blueprint_group_id=get_blueprint_group_id
+    )
 
 
 def get_blueprint_group_id(blueprint):
     """
     Extract the group_id from a blueprint.
 
+    This function handles different types of input to reliably extract
+    the group ID. It works with Blueprint objects, strings, or None.
+
     Args:
-        blueprint: Flask Blueprint object or string
+        blueprint: Flask Blueprint object, string, or None
 
     Returns:
-        str: The extracted group_id
+        str: The extracted group_id or None if it cannot be determined
     """
+    if blueprint is None:
+        logger.warning("Received None blueprint when trying to get group_id")
+        return None
+
+    # Handle string input (might be blueprint name or already a group_id)
     if isinstance(blueprint, str):
+        # Check if it contains a dot (indicating blueprint.name format)
+        if "." in blueprint:
+            return blueprint.split(".")[0]
         return blueprint
 
-    # Check if it has report_metadata
-    if (
-        hasattr(blueprint, "report_metadata")
-        and "group_id" in blueprint.report_metadata
-    ):
-        return blueprint.report_metadata["group_id"]
+    # Blueprint object with report_metadata
+    if hasattr(blueprint, "report_metadata") and blueprint.report_metadata:
+        if "group_id" in blueprint.report_metadata:
+            return blueprint.report_metadata["group_id"]
 
-    # Otherwise use the blueprint name
-    return blueprint.name
+    # Try to extract from blueprint name
+    if hasattr(blueprint, "name"):
+        # If name contains a dot, take the first part as group_id
+        if "." in blueprint.name:
+            return blueprint.name.split(".")[0]
+        return blueprint.name
+
+    # If we get here, log a warning and return None
+    logger.warning("Could not determine group_id from blueprint: %s", blueprint)
+    return None

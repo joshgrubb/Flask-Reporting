@@ -8,14 +8,28 @@
     <!-- Quick Access Component -->
     {% include "components/quick_access.html" %}
 
-    <!-- This is the key fix -->
-    {% set current_group_id = get_blueprint_group_id(request.blueprint) %}
-    {% set group_reports = get_group_reports(current_group_id) %}
+    <!-- Search Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <input type="text" id="reportSearch" class="form-control" placeholder="Search Reports..."
+                onkeyup="filterReports()">
+        </div>
+    </div>
 
-    <div class="row mt-4">
+    <!-- Reports Tiles -->
+    <div class="row" id="reportsContainer">
+        {% set current_group_id = request.blueprint.split('.')[0] if '.' in request.blueprint else request.blueprint %}
+
+        <!-- Fallback for getting group ID if above method fails -->
+        {% if not get_group_reports(current_group_id) %}
+        {% set current_group_id = get_blueprint_group_id(request.blueprint) %}
+        {% endif %}
+
+        {% set group_reports = get_group_reports(current_group_id) %}
+
         {% for report in group_reports %}
         {% if report.enabled %}
-        <div class="col-md-4 col-sm-6 mb-4">
+        <div class="col-md-4 col-sm-6 mb-4 report-tile">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
@@ -35,4 +49,23 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Interactive Search/Filter Script -->
+<script>
+    function filterReports() {
+        var input = document.getElementById("reportSearch").value.toLowerCase();
+        var tiles = document.getElementsByClassName("report-tile");
+
+        for (var i = 0; i < tiles.length; i++) {
+            let titleText = tiles[i].querySelector('.card-title').innerText.toLowerCase();
+            let descText = tiles[i].querySelector('.card-text').innerText.toLowerCase();
+
+            if (titleText.indexOf(input) > -1 || descText.indexOf(input) > -1) {
+                tiles[i].style.display = "";
+            } else {
+                tiles[i].style.display = "none";
+            }
+        }
+    }
+</script>
 {% endblock %}

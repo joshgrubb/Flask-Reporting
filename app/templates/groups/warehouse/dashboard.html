@@ -1,30 +1,48 @@
-{% extends "groups/dashboard_base.html" %}
+{% extends "base.html" %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<!-- Search Filter Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <input type="text" id="reportSearch" class="form-control" placeholder="Search Reports..."
-            onkeyup="filterReports()">
-    </div>
-</div>
+<div class="container">
+    <h1>{{ title }}</h1>
 
-<!-- Reports Tiles -->
-<div class="row" id="reportsContainer">
-    {% for report in reports %}
-    <div class="col-md-3 col-sm-6 mb-4 report-tile">
-        <a href="{{ report.url }}" class="text-decoration-none">
-            <div class="card h-100 card-hover text-center report-card">
+    <!-- Quick Access Component -->
+    {% include "components/quick_access.html" %}
+
+    <!-- Search Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <input type="text" id="reportSearch" class="form-control" placeholder="Search Reports..."
+                onkeyup="filterReports()">
+        </div>
+    </div>
+
+    <!-- Reports Grid -->
+    <div class="row" id="reportsContainer">
+        {% set current_group_id = "warehouse" %}
+        {% set group_reports = get_group_reports(current_group_id) %}
+
+        {% for report in group_reports %}
+        {% if report.enabled %}
+        <div class="col-md-4 col-sm-6 mb-4 report-tile">
+            <div class="card h-100">
                 <div class="card-body">
-                    <i class="{{ report.icon }} fa-3x mb-3" aria-hidden="true"></i>
-                    <h5 class="card-title">{{ report.name }}</h5>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-container me-3">
+                            <i class="{{ report.icon }} fa-2x text-primary"></i>
+                        </div>
+                        <h5 class="card-title mb-0">{{ report.name }}</h5>
+                    </div>
+                    <p class="card-text">{{ report.description }}</p>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{{ report.url }}" class="btn btn-primary btn-sm">View Report</a>
                 </div>
             </div>
-        </a>
+        </div>
+        {% endif %}
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 
 <!-- Interactive Search/Filter Script -->
@@ -32,9 +50,16 @@
     function filterReports() {
         var input = document.getElementById("reportSearch").value.toLowerCase();
         var tiles = document.getElementsByClassName("report-tile");
+
         for (var i = 0; i < tiles.length; i++) {
             let titleText = tiles[i].querySelector('.card-title').innerText.toLowerCase();
-            tiles[i].style.display = titleText.indexOf(input) > -1 ? "" : "none";
+            let descText = tiles[i].querySelector('.card-text').innerText.toLowerCase();
+
+            if (titleText.indexOf(input) > -1 || descText.indexOf(input) > -1) {
+                tiles[i].style.display = "";
+            } else {
+                tiles[i].style.display = "none";
+            }
         }
     }
 </script>

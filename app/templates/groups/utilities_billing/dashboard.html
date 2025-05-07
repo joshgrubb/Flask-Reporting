@@ -1,5 +1,7 @@
-<!-- app/templates/groups/{group_name}/dashboard.html -->
-{% extends "groups/dashboard_base.html" %}
+<!-- app/templates/groups/utilities_billing/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -8,11 +10,22 @@
     <!-- Quick Access Component -->
     {% include "components/quick_access.html" %}
 
-    <div class="row mt-4">
-        {% set group_reports = get_group_reports(request.blueprint) %}
+    <!-- Search Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <input type="text" id="reportSearch" class="form-control" placeholder="Search Reports..."
+                onkeyup="filterReports()">
+        </div>
+    </div>
+
+    <!-- Reports Grid -->
+    <div class="row" id="reportsContainer">
+        {% set current_group_id = "utilities_billing" %}
+        {% set group_reports = get_group_reports(current_group_id) %}
+
         {% for report in group_reports %}
         {% if report.enabled %}
-        <div class="col-md-4 col-sm-6 mb-4">
+        <div class="col-md-4 col-sm-6 mb-4 report-tile">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
@@ -32,4 +45,23 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Interactive Search/Filter Script -->
+<script>
+    function filterReports() {
+        var input = document.getElementById("reportSearch").value.toLowerCase();
+        var tiles = document.getElementsByClassName("report-tile");
+
+        for (var i = 0; i < tiles.length; i++) {
+            let titleText = tiles[i].querySelector('.card-title').innerText.toLowerCase();
+            let descText = tiles[i].querySelector('.card-text').innerText.toLowerCase();
+
+            if (titleText.indexOf(input) > -1 || descText.indexOf(input) > -1) {
+                tiles[i].style.display = "";
+            } else {
+                tiles[i].style.display = "none";
+            }
+        }
+    }
+</script>
 {% endblock %}

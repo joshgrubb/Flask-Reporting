@@ -14,20 +14,23 @@ from app.groups import bp
 logger = logging.getLogger(__name__)
 
 
-# app/groups/routes.py
 @bp.route("/")
 def index():
     """
     Render the main Groups dashboard.
+
+    Returns:
+        str: Rendered HTML template.
     """
     try:
-        # Use the registry instead of manually listing groups
+        # Get all registered groups from the registry
         groups = get_all_groups()
 
+        # Log the number of groups for debugging
         logger.info("Rendering Groups dashboard with %d groups", len(groups))
 
         return render_template(
-            "groups/dashboard_base.html",
+            "groups/index.html",  # Use a specific template for the main dashboard
             title="Reports Dashboard",
             groups=groups,
         )
